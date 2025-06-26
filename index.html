@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>사당 홀리스타 플로잉 계좌</title>
+    <style>
+        body {
+            background-color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 60px 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 18px;
+            margin: 8px 0;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>사당 홀리스타 플로잉 계좌</h1>
+    <p><strong>은행:</strong> 하나은행</p>
+    <p><strong>계좌번호:</strong> <span id="account">228-910022-13204</span></p>
+    <p><strong>예금주:</strong> 온누리교회(사당홀리스타)</p>
+    <button onclick="copyAccount()">📋 계좌번호 복사하기</button>
+
+    <script>
+        function copyAccount() {
+            const accountText = document.getElementById("account").innerText;
+            navigator.clipboard.writeText(accountText).then(function() {
+                alert("✅ 계좌번호가 복사되었습니다: " + accountText);
+            }, function(err) {
+                alert("❌ 복사에 실패했습니다.");
+            });
+        }
+    </script>
+</body>
+</html>
