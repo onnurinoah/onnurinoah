@@ -1,48 +1,404 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>사당 홀리스타 플로잉 계좌</title>
+    <title>2026 대학청년부 분과 드래프트</title>
     <style>
+        /* --- CSS Start --- */
         body {
-            background-color: white;
             font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 60px 20px;
+            margin: 20px;
+            background-color: #f4f4f4;
         }
-        h1 {
-            font-size: 24px;
+
+        header {
+            text-align: center;
             margin-bottom: 20px;
         }
-        p {
-            font-size: 18px;
-            margin: 8px 0;
+
+        .container {
+            display: flex;
+            gap: 20px;
         }
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
+
+        .draft-area {
+            flex: 3;
+            overflow-x: auto;
+        }
+
+        .roster-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* --- 테이블 스타일 --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        thead th {
+            background-color: #333;
+            color: white;
+        }
+
+        /* 티어별 배경색 (이미지 기반) */
+        .darkgray-bg { background-color: darkgray; }
+        .lightgray-bg { background-color: lightgray; }
+        .red-bg { background-color: #ffcccc; }
+        .lightgreen-bg { background-color: #e6ffe6; }
+        .yellow-bg { background-color: #ffffcc; }
+
+
+        /* --- 드래프트 칸 스타일 --- */
+        .blank {
+            min-height: 40px;
             cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #007bff; /* 우선순위 번호 색상 */
+            transition: background-color 0.15s;
         }
+
+        .blank.filled {
+            background-color: #d1e7dd !important; /* 채워진 칸 색상 */
+            color: #333;
+            font-size: 1em;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 드래그 오버 효과 */
+        .blank.drag-over {
+            box-shadow: 0 0 10px 3px rgba(0, 123, 255, 0.6);
+        }
+        
+        /* 기본 채워진 칸 스타일 */
+        .blank.default-filled {
+            background-color: #c0c0c0 !important;
+            color: #444;
+            cursor: default;
+        }
+
+        /* --- 버튼 스타일 --- */
+        .priority-btn {
+            padding: 5px 10px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.2em;
+        }
+
+        .priority-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- 명단 스티커 스타일 --- */
+        #roster-stickers {
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #fff;
+            min-height: 150px;
+        }
+
+        .name-sticker {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            background-color: #ffecb3; /* 스티커 색상 */
+            border: 1px solid #ffd54f;
+            border-radius: 5px;
+            cursor: grab;
+            font-weight: bold;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+
+        .name-sticker.dragging {
+            opacity: 0.7;
+        }
+
+        .name-sticker.hidden {
+            display: none;
+        }
+        /* --- CSS End --- */
     </style>
 </head>
 <body>
-    <h1>사당 홀리스타 플로잉 계좌</h1>
-    <p><strong>은행:</strong> 하나은행</p>
-    <p><strong>계좌번호:</strong> <span id="account">228-910022-13204</span></p>
-    <p><strong>예금주:</strong> 온누리교회(사당홀리스타)</p>
-    <button onclick="copyAccount()">📋 계좌번호 복사하기</button>
+
+    <header>
+        <h1>2026 대학청년부 분과 드래프트</h1>
+    </header>
+
+    <div class="container">
+        <div class="draft-area">
+            <table>
+                <thead>
+                    <tr>
+                        <th>연차</th>
+                        <th>기획(최대흥)</th>
+                        <th>예배(강태광)</th>
+                        <th>양육(신경훈)</th>
+                        <th>선교(조은광)</th>
+                        <th>사역(전진)</th>
+                        <th>캠퍼스(오현교)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-tier="A" class="darkgray-bg">
+                        <td>전임 3년차~</td>
+                        <td class="blank" data-col="기획" data-priority-group="A"></td>
+                        <td class="blank" data-col="예배" data-priority-group="A"></td>
+                        <td class="blank" data-col="양육" data-priority-group="A"></td>
+                        <td class="blank" data-col="선교" data-priority-group="A"></td>
+                        <td class="blank" data-col="사역" data-priority-group="A"></td>
+                        <td class="blank" data-col="캠퍼스" data-priority-group="A"></td>
+                        <td><button class="priority-btn" data-tier="A">➡️</button></td>
+                    </tr>
+                    <tr data-tier="B" class="lightgray-bg">
+                        <td>전임 1~2년차</td>
+                        <td id="fixed-recruit" class="blank default-filled" data-col="기획" data-priority-group="B">신입</td>
+                        <td class="blank" data-col="예배" data-priority-group="B"></td>
+                        <td class="blank" data-col="양육" data-priority-group="B"></td>
+                        <td class="blank" data-col="선교" data-priority-group="B"></td>
+                        <td class="blank" data-col="사역" data-priority-group="B"></td>
+                        <td class="blank" data-col="캠퍼스" data-priority-group="B"></td>
+                        <td><button class="priority-btn" data-tier="B">➡️</button></td>
+                    </tr>
+                    <tr data-tier="C">
+                        <td>파트 3년차</td>
+                        <td class="blank red-bg" data-col="기획" data-priority-group="C"></td>
+                        <td class="blank lightgreen-bg" data-col="예배" data-priority-group="C"></td>
+                        <td class="blank red-bg" data-col="양육" data-priority-group="C"></td>
+                        <td class="blank lightgreen-bg" data-col="선교" data-priority-group="C"></td>
+                        <td class="blank red-bg" data-col="사역" data-priority-group="C"></td>
+                        <td class="blank lightgreen-bg" data-col="캠퍼스" data-priority-group="C"></td>
+                        <td><button class="priority-btn" data-tier="C">➡️</button></td>
+                    </tr>
+                    <tr data-tier="D">
+                        <td>파트 2년차</td>
+                        <td class="blank lightgreen-bg" data-col="기획" data-priority-group="D"></td>
+                        <td class="blank yellow-bg" data-col="예배" data-priority-group="D"></td>
+                        <td class="blank lightgreen-bg" data-col="양육" data-priority-group="D"></td>
+                        <td class="blank lightgreen-bg" data-col="선교" data-priority-group="D"></td>
+                        <td class="blank yellow-bg" data-col="사역" data-priority-group="D"></td>
+                        <td class="blank yellow-bg" data-col="캠퍼스" data-priority-group="D"></td>
+                        <td><button class="priority-btn" data-tier="D">➡️</button></td>
+                    </tr>
+                    <tr data-tier="E">
+                        <td>파트 1년차</td>
+                        <td class="blank yellow-bg" data-col="기획" data-priority-group="E"></td>
+                        <td class="blank yellow-bg" data-col="예배" data-priority-group="E"></td>
+                        <td class="blank yellow-bg" data-col="양육" data-priority-group="E"></td>
+                        <td class="blank yellow-bg" data-col="선교" data-priority-group="E"></td>
+                        <td class="blank yellow-bg" data-col="사역" data-priority-group="E"></td>
+                        <td class="blank yellow-bg" data-col="캠퍼스" data-priority-group="E"></td>
+                        <td><button class="priority-btn" data-tier="E">➡️</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="roster-area">
+            <div id="roster-stickers">
+                <h2>드래프트 명단</h2>
+                </div>
+
+            <div class="roster-table-container">
+                <h2>전임/파트 명단 (2026년 기준)</h2>
+                <table>
+                    <tr class="lightgreen-bg">
+                        <td>전임 3년차~</td>
+                        <td id="names-A">박성원, 박성훈, 이진기, 최재윤</td>
+                    </tr>
+                    <tr class="yellow-bg">
+                        <td>1~2년차</td>
+                        <td id="names-B">김현, 길한솔, 이승호, 최강호, 홍근영</td>
+                    </tr>
+                    <tr class="red-bg">
+                        <td>파트 3년차~</td>
+                        <td id="names-C">구길모, 이예찬, 장건우, 정찬중</td>
+                    </tr>
+                    <tr class="lightgreen-bg">
+                        <td>2년차</td>
+                        <td id="names-D">권혁성, 박시온, 배윤주, 오진우, 이은찬, 조영찬</td>
+                    </tr>
+                    <tr class="yellow-bg">
+                        <td>1년차</td>
+                        <td id="names-E">이나단, 신지수, 김영범, 신입</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
-        function copyAccount() {
-            const accountText = document.getElementById("account").innerText;
-            navigator.clipboard.writeText(accountText).then(function() {
-                alert("✅ 계좌번호가 복사되었습니다: " + accountText);
-            }, function(err) {
-                alert("❌ 복사에 실패했습니다.");
+        /* --- JavaScript Start --- */
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. 명단 데이터
+            const rosterData = {
+                'A': ['박성원', '박성훈', '이진기', '최재윤'],
+                'B': ['김현', '길한솔', '이승호', '최강호', '홍근영'],
+                'C': ['구길모', '이예찬', '장건우', '정찬중'],
+                'D': ['권혁성', '박시온', '배윤주', '오진우', '이은찬', '조영찬'],
+                'E': ['이나단', '신지수', '김영범', '신입']
+            };
+
+            const stickersContainer = document.getElementById('roster-stickers');
+            const priorityButtons = document.querySelectorAll('.priority-btn');
+            const allBlanks = document.querySelectorAll('.blank');
+            const draftBlanks = document.querySelectorAll('.blank:not(.default-filled)'); // 드래프트 가능한 빈칸만 선택
+
+            // 빈칸 배열 (각 티어별 순서대로)
+            const tierBlanks = {
+                'A': document.querySelectorAll('tr[data-tier="A"] .blank'),
+                'B': document.querySelectorAll('tr[data-tier="B"] .blank:not(.default-filled)'), // '신입' 칸 제외
+                'C': document.querySelectorAll('tr[data-tier="C"] .blank'),
+                'D': document.querySelectorAll('tr[data-tier="D"] .blank'),
+                'E': document.querySelectorAll('tr[data-tier="E"] .blank'),
+            };
+
+            // 2. 명단 스티커 생성
+            function createStickers() {
+                stickersContainer.innerHTML = '<h2>드래프트 명단</h2>';
+                for (const tier in rosterData) {
+                    rosterData[tier].forEach(name => {
+                        const sticker = document.createElement('div');
+                        sticker.className = 'name-sticker';
+                        sticker.draggable = true;
+                        sticker.textContent = name;
+                        sticker.id = `sticker-${name}`;
+                        sticker.setAttribute('data-tier', tier);
+                        stickersContainer.appendChild(sticker);
+                    });
+                }
+            }
+
+            // 3. 우선순위 부여 로직
+            function setPriorities(tier) {
+                const blanks = tierBlanks[tier];
+                if (!blanks || blanks.length === 0) return;
+
+                let currentDraftBlanks = Array.from(document.querySelectorAll('.blank:not(.default-filled)')).filter(b => !b.classList.contains('filled'));
+                let currentTotalCount = currentDraftBlanks.length;
+                let tierPriority = 1;
+
+                // 1. 해당 티어의 '선교'가 아닌 칸에 순위 부여
+                blanks.forEach((blank) => {
+                    if (blank.classList.contains('filled')) return;
+
+                    if (blank.getAttribute('data-col') !== '선교') {
+                        blank.textContent = tierPriority++;
+                    }
+                });
+
+                // 2. 해당 티어의 '선교' 칸에 '전체 마지막 순위' 부여
+                blanks.forEach((blank) => {
+                    if (blank.classList.contains('filled')) return;
+                    
+                    if (blank.getAttribute('data-col') === '선교') {
+                        // 현재 남은 빈칸의 총 개수를 마지막 순위로 부여
+                        blank.textContent = currentTotalCount; 
+                    }
+                });
+            }
+
+            // 4. 모든 '선교' 칸의 순위를 업데이트하는 함수 (드롭 후 호출)
+            function updateAllDraftPriorities() {
+                let currentDraftBlanks = Array.from(document.querySelectorAll('.blank:not(.default-filled)')).filter(b => !b.classList.contains('filled'));
+                let currentTotalCount = currentDraftBlanks.length;
+
+                // 우선순위가 부여된 '선교' 칸만 찾아서 업데이트
+                currentDraftBlanks.filter(b => b.getAttribute('data-col') === '선교' && !isNaN(parseInt(b.textContent))).forEach(b => {
+                    b.textContent = currentTotalCount;
+                });
+            }
+
+            // 5. 화살표 버튼 이벤트 리스너
+            priorityButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const tier = e.currentTarget.getAttribute('data-tier');
+                    setPriorities(tier);
+                });
             });
-        }
+
+
+            // 6. 드래그 앤 드롭 이벤트 처리
+            let draggedSticker = null;
+
+            // 드래그 시작
+            stickersContainer.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('name-sticker')) {
+                    draggedSticker = e.target;
+                    e.dataTransfer.setData('text/plain', draggedSticker.textContent);
+                    setTimeout(() => {
+                        draggedSticker.classList.add('dragging');
+                    }, 0);
+                }
+            });
+
+            // 드래그 끝
+            stickersContainer.addEventListener('dragend', () => {
+                if (draggedSticker) {
+                    draggedSticker.classList.remove('dragging');
+                    draggedSticker = null;
+                }
+            });
+
+            // 드롭 대상 영역 처리 (드래프트 가능한 칸만)
+            draftBlanks.forEach(blank => {
+                blank.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!blank.classList.contains('filled')) {
+                        blank.classList.add('drag-over');
+                    }
+                });
+
+                blank.addEventListener('dragleave', () => {
+                    blank.classList.remove('drag-over');
+                });
+
+                blank.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    blank.classList.remove('drag-over');
+
+                    if (draggedSticker && !blank.classList.contains('filled')) {
+                        const name = draggedSticker.textContent;
+                        
+                        // 1. 칸 채우기
+                        blank.textContent = name;
+                        blank.classList.add('filled');
+                        
+                        // 2. 스티커 숨기기
+                        draggedSticker.classList.add('hidden');
+                        
+                        // 3. 선교 칸 우선순위 재계산
+                        updateAllDraftPriorities();
+                    }
+                });
+            });
+
+            // 초기화 및 실행
+            createStickers();
+        });
+        /* --- JavaScript End --- */
     </script>
 </body>
 </html>
