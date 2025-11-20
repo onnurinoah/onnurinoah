@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종)</title>
+    <title>2026 대학청년부 분과 드래프트 (최종 보완)</title>
     <style>
         /* --- CSS Start --- */
         body {
@@ -59,9 +59,9 @@
         /* 티어별 배경색 (테이블 줄) */
         .darkgray-bg { background-color: darkgray; }
         .lightgray-bg-row { background-color: lightgray; }
-        .red-bg { background-color: #ffcccc; }
-        .lightgreen-bg-row { background-color: #e6ffe6; }
-        .yellow-bg-row { background-color: #ffffcc; }
+        .row-C { background-color: #ffcccc; } /* 파트 3년차 (연한 빨강 유지) */
+        .row-D { background-color: #e6e6e6; } /* 파트 2년차 (연한 회색) */
+        .row-E { background-color: #f2f2f2; } /* 파트 1년차 (가장 연한 회색) */
 
 
         /* --- 드래프트 칸 스타일 --- */
@@ -96,7 +96,7 @@
             border: 1px solid #aaa;
         }
         
-        /* 칸 배경색 (요청에 따른 연차별 색상) */
+        /* 칸 배경색 (기존 요청대로 유지) */
         .lightgreen-bg-slot { background-color: #ccffcc; } /* 전임 3년차 (연한 초록) */
         .lightyellow-bg-slot { background-color: #ffffcc; } /* 전임 1~2년차 (연한 노랑) */
         .lightcoral-bg-slot { background-color: #ffdddd; } /* 파트 3년차 (연한 빨강) */
@@ -156,7 +156,7 @@
             transition: opacity 0.3s;
         }
 
-        /* 스티커 배경색 (요청에 따른 연차별 색상) */
+        /* 스티커 배경색 */
         .sticker-A { background-color: #ccffcc; } /* 연한 초록 */
         .sticker-B { background-color: #ffffcc; } /* 연한 노랑 */
         .sticker-C { background-color: #ffdddd; } /* 연한 빨강 */
@@ -212,7 +212,7 @@
                             <div class="draft-slots"><div class="draft-slot blank lightgreen-bg-slot" data-col="사역" data-tier="A" data-slot-order="1"></div></div>
                         </td>
                         <td></td>
-                        <td><button class="priority-btn" data-tier="A">➡️</button></td>
+                        <td><button class="priority-btn" data-tier="A">🗳️</button></td>
                     </tr>
                     <tr data-tier="B" class="lightgray-bg-row">
                         <td>전임 1~2년차</td>
@@ -235,9 +235,9 @@
                             <div class="draft-slots"><div class="draft-slot blank lightyellow-bg-slot" data-col="사역" data-tier="B" data-slot-order="1"></div></div>
                         </td>
                         <td></td>
-                        <td><button class="priority-btn" data-tier="B">➡️</button></td>
+                        <td><button class="priority-btn" data-tier="B">🗳️</button></td>
                     </tr>
-                    <tr data-tier="C" class="red-bg">
+                    <tr data-tier="C" class="row-C">
                         <td>파트 3년차</td>
                         <td></td>
                         <td>
@@ -253,9 +253,9 @@
                             <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="사역" data-tier="C" data-slot-order="1"></div></div>
                         </td>
                         <td></td>
-                        <td><button class="priority-btn" data-tier="C">➡️</button></td>
+                        <td><button class="priority-btn" data-tier="C">🗳️</button></td>
                     </tr>
-                    <tr data-tier="D" class="lightgreen-bg-row">
+                    <tr data-tier="D" class="row-D">
                         <td>파트 2년차</td>
                         <td></td>
                         <td>
@@ -280,9 +280,9 @@
                             </div>
                         </td>
                         <td></td>
-                        <td><button class="priority-btn" data-tier="D">➡️</button></td>
+                        <td><button class="priority-btn" data-tier="D">🗳️</button></td>
                     </tr>
-                    <tr data-tier="E" class="yellow-bg-row">
+                    <tr data-tier="E" class="row-E">
                         <td>파트 1년차</td>
                         <td></td>
                         <td>
@@ -299,7 +299,7 @@
                             <div class="draft-slots"><div class="draft-slot blank lightgray-bg-slot" data-col="사역" data-tier="E" data-slot-order="1"></div></div>
                         </td>
                         <td></td>
-                        <td><button class="priority-btn" data-tier="E">➡️</button></td>
+                        <td><button class="priority-btn" data-tier="E">🗳️</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -317,19 +317,19 @@
                         <td>전임 3년차~</td>
                         <td>박성원, 박성훈, 이진기, 최재윤</td>
                     </tr>
-                    <tr class="yellow-bg-row">
+                    <tr class="lightgray-bg-row">
                         <td>1~2년차</td>
                         <td>김현, 길한솔, 이승호, 최강호, 홍근영</td>
                     </tr>
-                    <tr class="red-bg">
+                    <tr class="row-C">
                         <td>파트 3년차~</td>
                         <td>구길모, 이예찬, 장건우, 정찬중</td>
                     </tr>
-                    <tr class="lightgreen-bg-row">
+                    <tr class="row-D">
                         <td>2년차</td>
                         <td>권혁성, 박시온, 박지윤, 배윤주, 오진우, 이은찬, 조영찬</td>
                     </tr>
-                    <tr class="yellow-bg-row">
+                    <tr class="row-E">
                         <td>1년차</td>
                         <td>이나단, 신지수, 김영범, 신입</td>
                     </tr>
@@ -341,7 +341,7 @@
     <script>
         /* --- JavaScript Start --- */
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. 명단 데이터 (업데이트된 명단 반영)
+            // 1. 명단 데이터
             const rosterData = {
                 'A': { name: '전임 3년차~', list: ['박성원', '박성훈', '이진기', '최재윤'], count: 4, colorClass: 'sticker-A' },
                 'B': { name: '전임 1~2년차', list: ['김현', '길한솔', '이승호', '최강호', '홍근영'], count: 5, colorClass: 'sticker-B' },
@@ -407,29 +407,25 @@
                 
                 const totalSlots = blanks.length;
                 let priorities = Array.from({ length: totalSlots }, (_, i) => i + 1); // 1부터 N까지 순위
-                priorities = shuffle(priorities); // 순위 랜덤 셔플
-
-                let round1Priorities = priorities.slice(0, round1Slots.length);
-                let round2Priorities = priorities.slice(round1Slots.length);
                 
-                round1Priorities = shuffle(round1Priorities); // 1라운드 순위 재셔플
-                round2Priorities = shuffle(round2Priorities); // 2라운드 순위 재셔플
+                // 2. 1라운드(1순위 칸) 순위: 1부터 round1Slots.length까지 사용
+                let round1Priorities = priorities.slice(0, round1Slots.length);
+                round1Priorities = shuffle(round1Priorities); 
 
-                // 2. 1순위 칸에 우선순위 부여 (모든 분과가 1순위씩 먼저 가져감)
+                // 3. 2라운드(2순위 칸) 순위: round1Slots.length + 1 부터 totalSlots까지 사용
+                let round2Priorities = priorities.slice(round1Slots.length); 
+                round2Priorities = shuffle(round2Priorities);
+
+                // 4. 1순위 칸에 순위 부여
                 round1Slots.forEach((slot, index) => {
                     slot.textContent = round1Priorities[index];
                 });
 
-                // 3. 2순위 칸에 남은 우선순위 부여
+                // 5. 2순위 칸에 후순위 번호 부여 (한 바퀴 돈 후의 순위)
                 round2Slots.forEach((slot, index) => {
                     slot.textContent = round2Priorities[index];
                 });
-
-                // 4. 모든 칸에 순위가 부여된 후, '선교' 칸의 순위 재조정 (형평성 규칙 강화)
-                // 이 코드에서는 '선교' 칸도 일반 2순위 칸과 동일하게 2라운드에서 뽑히므로, 추가적인 '전체 마지막 순위' 로직은 생략합니다.
-                // *요청하신 '같은 분과에 칸이 두개가 있는 경우엔 남은 한 칸은 다른 분과가 우선순위 먼저 가져가고 번호 받게 해주고' 규칙이 '선교'에 대한 특정 규칙보다 상위 규칙으로 해석되었습니다.*
             }
-
 
             // 4. 화살표 버튼 이벤트 리스너
             priorityButtons.forEach(button => {
@@ -463,9 +459,12 @@
             draftBlanks.forEach(blank => {
                 blank.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    // 1. 순위가 부여되었는지 확인
+                    // 1. 순위가 부여되었는지 확인 (텍스트가 숫자인지 확인)
                     // 2. 스티커의 티어와 칸의 티어가 일치하는지 확인
-                    if (!blank.classList.contains('filled') && !isNaN(parseInt(blank.textContent)) && e.dataTransfer.getData('tier') === blank.getAttribute('data-tier')) {
+                    const isRanked = !isNaN(parseInt(blank.textContent));
+                    const isTierMatch = e.dataTransfer.getData('tier') === blank.getAttribute('data-tier');
+                    
+                    if (!blank.classList.contains('filled') && isRanked && isTierMatch) {
                         blank.classList.add('drag-over');
                     }
                 });
@@ -478,9 +477,10 @@
                     e.preventDefault();
                     blank.classList.remove('drag-over');
                     
-                    const tierCheck = draggedSticker && draggedSticker.getAttribute('data-tier') === blank.getAttribute('data-tier');
+                    const isRanked = !isNaN(parseInt(blank.textContent));
+                    const isTierMatch = draggedSticker && draggedSticker.getAttribute('data-tier') === blank.getAttribute('data-tier');
 
-                    if (draggedSticker && !blank.classList.contains('filled') && !isNaN(parseInt(blank.textContent)) && tierCheck) {
+                    if (draggedSticker && !blank.classList.contains('filled') && isRanked && isTierMatch) {
                         const name = draggedSticker.textContent;
                         
                         // 1. 칸 채우기
@@ -489,8 +489,6 @@
                         
                         // 2. 스티커 숨기기
                         draggedSticker.classList.add('hidden');
-                        
-                        // 참고: 드롭 후 순위 재조정 로직은 (랜덤 순위이므로) 필요하지 않음.
                     }
                 });
             });
