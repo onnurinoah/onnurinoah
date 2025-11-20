@@ -1,490 +1,330 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종 보완 6)</title>
-    <style>
-        /* --- CSS Start --- */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
+  <meta charset="UTF-8" />
+  <title>2026 대학청년부 분과 드래프트</title>
+  <style>
+    body {
+      font-family: "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      margin: 20px;
+      background:#f5f5f5;
+    }
 
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-        .container {
-            display: flex;
-            gap: 20px;
-        }
+    .draft-wrapper {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      gap: 24px;
+      align-items: flex-start;
+    }
 
-        .draft-area {
-            flex: 3;
-            overflow-x: auto;
-        }
+    /**************  왼쪽 메인 테이블  **************/
+    .draft-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
 
-        .roster-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+    .draft-table th,
+    .draft-table td {
+      border: 1px solid #333;
+      padding: 8px;
+      text-align: center;
+      min-width: 80px;
+      height: 42px;
+      font-size: 14px;
+    }
 
-        /* --- 테이블 스타일 --- */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            min-width: 800px;
-        }
+    .draft-table thead th {
+      background: #f5f5f5;
+      font-weight: 600;
+    }
 
-        th, td {
-            border: 1px solid #ccc;
-            padding: 5px;
-            text-align: center;
-            min-width: 60px;
-            vertical-align: top;
-        }
+    .row-header {
+      background:#f5f5f5;
+      font-weight: 600;
+      width: 90px;
+    }
 
-        thead th {
-            background-color: #333;
-            color: white;
-            font-size: 0.9em;
-        }
+    .row-divider td {
+      background:#999;
+      height: 32px;
+      padding:0;
+      border-color:#444;
+    }
 
-        /* 티어별 배경색 (테이블 줄) */
-        .darkgray-bg { background-color: darkgray; } /* 전임 3년차, 파트 3년차 */
-        .lightgray-bg-row { background-color: lightgray; }
-        .row-D { background-color: #e6e6e6; } /* 파트 2년차 */
-        .row-E { background-color: #f2f2f2; } /* 파트 1년차 */
+    .cell-gray   { background:#9e9e9e; }
+    .cell-yellow { background:#fff2cc; }
+    .cell-green  { background:#e2f0d9; }
+    .cell-pink   { background:#f8cbcc; }
+    .cell-empty  { background:#f3f3f3; }
 
+    .slot {
+      background:#ffffff;
+      cursor:default;
+      font-weight:600;
+      color:#333;
+    }
 
-        /* --- 드래프트 칸 스타일 --- */
-        .draft-slots {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            padding: 2px 0;
-        }
-        
-        .draft-slot {
-            height: 30px;
-            border: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2em;
-            color: #333;
-        }
-        
-        .draft-slot.blank {
-            cursor: pointer;
-            color: #007bff; /* 우선순위 번호 색상 */
-        }
+    /**************  오른쪽 : 화살표 + 명단  **************/
+    .side-panel {
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
 
-        .draft-slot.blank.filled {
-            font-weight: normal;
-            font-size: 1em;
-            cursor: default;
-            color: #333;
-            border: 1px solid #aaa;
-        }
-        
-        /* 고정된 칸 스타일 */
-        .draft-slot.fixed-slot {
-            background-color: #c0c0c0 !important;
-            color: #444;
-            font-size: 1em;
-            cursor: default;
-            font-weight: normal;
-            border: 1px solid #aaa;
-        }
+    .tier-block {
+      background:#fff;
+      padding:10px 12px;
+      border-radius:8px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
+    }
 
-        /* 칸 배경색 (기존 요청대로 유지) */
-        .lightgreen-bg-slot { background-color: #ccffcc; } /* 전임 3년차 (연한 초록) */
-        .lightyellow-bg-slot { background-color: #ffffcc; } /* 전임 1~2년차 (연한 노랑) */
-        .lightcoral-bg-slot { background-color: #ffdddd; } /* 파트 3년차 (연한 빨강) */
-        .lightblue-bg-slot { background-color: #cceeff; } /* 파트 2년차 (연한 파랑) */
-        .lightgray-bg-slot { background-color: #eeeeee; } /* 파트 1년차 (연한 회색) */
+    .tier-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:6px;
+    }
 
-        /* 드래그 오버 효과 */
-        .draft-slot.blank.drag-over {
-            box-shadow: 0 0 10px 3px rgba(0, 123, 255, 0.6) inset;
-        }
-        
-        /* --- 버튼 스타일 --- */
-        .priority-btn {
-            padding: 5px 10px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1.2em;
-        }
+    .tier-title {
+      font-weight:600;
+      font-size:14px;
+    }
 
-        .priority-btn:hover {
-            background-color: #0056b3;
-        }
+    .tier-btn {
+      border:none;
+      padding:4px 10px;
+      cursor:pointer;
+      border-radius:16px;
+      font-size:13px;
+      background:#1976d2;
+      color:#fff;
+    }
+    .tier-btn:hover {
+      background:#145ca5;
+    }
 
-        /* --- 명단 스티커 스타일 --- */
-        #roster-area-sections {
-            border: 1px solid #ccc;
-            padding: 10px;
-            background-color: #fff;
-        }
-        
-        .roster-section {
-            margin-bottom: 10px;
-            padding: 5px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .roster-section h3 {
-            margin: 5px 0;
-            font-size: 1.1em;
-            border-left: 5px solid #007bff;
-            padding-left: 5px;
-        }
+    .name-tags {
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+      margin-top:4px;
+      font-size:12px;
+    }
 
-        .name-sticker {
-            display: inline-block;
-            padding: 8px 12px;
-            margin: 4px;
-            border: 1px solid #ffd54f;
-            border-radius: 5px;
-            cursor: grab;
-            font-weight: bold;
-            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-            opacity: 1;
-            transition: opacity 0.3s;
-        }
+    .tag {
+      padding:3px 8px;
+      border-radius:999px;
+      background:#e0e7ff;
+      border:1px solid #c7d2fe;
+      white-space:nowrap;
+    }
 
-        /* 스티커 배경색 */
-        .sticker-A { background-color: #ccffcc; } /* 연한 초록 */
-        .sticker-B { background-color: #ffffcc; } /* 연한 노랑 */
-        .sticker-C { background-color: #ffdddd; } /* 연한 빨강 */
-        .sticker-D { background-color: #cceeff; } /* 연한 파랑 */
-        .sticker-E { background-color: #eeeeee; } /* 연한 회색 */
+    .side-title {
+      font-size:15px;
+      font-weight:700;
+      margin:4px 0 8px;
+    }
 
-        .name-sticker.dragging {
-            opacity: 0.7;
-        }
+    .small-caption {
+      font-size:11px;
+      color:#777;
+      margin-bottom:4px;
+    }
 
-        .name-sticker.hidden {
-            display: none;
-        }
-        /* --- CSS End --- */
-    </style>
+    .reset-area {
+      margin-top:12px;
+      text-align:right;
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+    }
+
+    .reset-btn {
+      border:none;
+      padding:4px 10px;
+      font-size:12px;
+      border-radius:999px;
+      background:#ef5350;
+      color:#fff;
+      cursor:pointer;
+    }
+    .reset-btn:hover {
+      background:#c62828;
+    }
+
+    .undo-btn {
+      border:none;
+      padding:4px 10px;
+      font-size:12px;
+      border-radius:999px;
+      background:#9e9e9e;
+      color:#fff;
+      cursor:pointer;
+    }
+    .undo-btn:hover {
+      background:#757575;
+    }
+  </style>
 </head>
 <body>
+<h1>2026 대학청년부 분과 드래프트</h1>
 
-    <header>
-        <h1>2026 대학청년부 분과 드래프트</h1>
-    </header>
+<div class="draft-wrapper">
+  <!-- 1. 왼쪽 메인 테이블 -->
+  <table class="draft-table">
+    <thead>
+      <tr>
+        <th>연차</th>
+        <th>기획(최대홍)</th>
+        <th>예배(김태광)</th>
+        <th>양육(신경훈)</th>
+        <th>선교(조은광)</th>
+        <th>사역(전진)</th>
+        <th>캠퍼스(오현교)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 전임 3년차~ -->
+      <tr data-tier-row="ft3">
+        <th class="row-header">전임 3년차~</th>
+        <td class="cell-gray"></td>
+        <td class="slot cell-empty" data-tier="ft3" data-ministry="worship"></td>
+        <td class="slot cell-empty" data-tier="ft3" data-ministry="training"></td>
+        <td class="slot cell-empty" data-tier="ft3" data-ministry="mission"></td>
+        <td class="slot cell-empty" data-tier="ft3" data-ministry="service"></td>
+        <td class="slot cell-empty" data-tier="ft3" data-ministry="campus"></td>
+      </tr>
 
-    <div class="container">
-        <div class="draft-area">
-            <table>
-                <thead>
-                    <tr>
-                        <th>연차</th>
-                        <th>기획(최대흥)</th>
-                        <th>예배(김태광)</th>
-                        <th>양육(신경훈)</th>
-                        <th>선교(조은광)</th>
-                        <th>사역(전진)</th>
-                        <th>캠퍼스(오현교)</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr data-tier="B" class="lightgray-bg-row">
-                        <td>전임 1~2년차</td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot fixed-slot" data-col="기획" data-tier="B" id="fixed-recruit-B">신입</div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightyellow-bg-slot" data-col="예배" data-tier="B" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightyellow-bg-slot" data-col="양육" data-tier="B" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightyellow-bg-slot" data-col="양육" data-tier="B" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightyellow-bg-slot" data-col="선교" data-tier="B" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightyellow-bg-slot" data-col="사역" data-tier="B" data-slot-order="1"></div></div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="B">🗳️</button></td>
-                    </tr>
-                    <tr data-tier="A" class="darkgray-bg">
-                        <td>전임 3년차~</td>
-                        <td></td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightgreen-bg-slot" data-col="양육" data-tier="A" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightgreen-bg-slot" data-col="선교" data-tier="A" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightgreen-bg-slot" data-col="선교" data-tier="A" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightgreen-bg-slot" data-col="사역" data-tier="A" data-slot-order="1"></div></div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="A">🗳️</button></td>
-                    </tr>
-                    <tr data-tier="E" class="row-E">
-                        <td>파트 1년차</td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightgray-bg-slot" data-col="예배" data-tier="E" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightgray-bg-slot" data-col="예배" data-tier="E" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightgray-bg-slot" data-col="선교" data-tier="E" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightgray-bg-slot" data-col="사역" data-tier="E" data-slot-order="1"></div></div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="E">🗳️</button></td>
-                    </tr>
-                    <tr data-tier="D" class="row-D">
-                        <td>파트 2년차</td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="예배" data-tier="D" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="예배" data-tier="D" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="양육" data-tier="D" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="양육" data-tier="D" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightblue-bg-slot" data-col="선교" data-tier="D" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="사역" data-tier="D" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="사역" data-tier="D" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="D">🗳️</button></td>
-                    </tr>
-                    <tr data-tier="C" class="darkgray-bg">
-                        <td>파트 3년차</td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="예배" data-tier="C" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="양육" data-tier="C" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="선교" data-tier="C" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="사역" data-tier="C" data-slot-order="1"></div></div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="C">🗳️</button></td>
-                    </tr>
-                </tbody>
-            </table>
+      <!-- 전임 1~2년차 -->
+      <tr data-tier-row="ft12">
+        <th class="row-header">전임 1~2년</th>
+        <td class="slot cell-yellow" data-tier="ft12" data-ministry="plan"></td>
+        <td class="slot cell-yellow" data-tier="ft12" data-ministry="worship"></td>
+        <td class="slot cell-yellow" data-tier="ft12" data-ministry="training"></td>
+
+        <!-- 선교 2칸: normal + late -->
+        <td class="slot cell-yellow" data-tier="ft12" data-ministry="mission" data-slot-type="normal"></td>
+        <td class="slot cell-yellow" data-tier="ft12" data-ministry="mission" data-slot-type="late"></td>
+
+        <td class="slot cell-yellow" data-tier="ft12" data-ministry="service"></td>
+      </tr>
+
+      <!-- 회색 구분줄 -->
+      <tr class="row-divider">
+        <td colspan="7"></td>
+      </tr>
+
+      <!-- 파트 3년차 -->
+      <tr data-tier-row="pt3">
+        <th class="row-header">파트 3년차</th>
+        <td class="slot cell-empty" data-tier="pt3" data-ministry="plan"></td>
+        <td class="slot cell-pink"   data-tier="pt3" data-ministry="worship"></td>
+        <td class="slot cell-pink"   data-tier="pt3" data-ministry="training"></td>
+        <td class="slot cell-pink"   data-tier="pt3" data-ministry="mission"></td>
+        <td class="slot cell-pink"   data-tier="pt3" data-ministry="service"></td>
+        <td class="slot cell-empty"  data-tier="pt3" data-ministry="campus"></td>
+      </tr>
+
+      <!-- 파트 2년차 -->
+      <tr data-tier-row="pt2">
+        <th class="row-header">파트 2년차</th>
+        <td class="slot cell-empty" data-tier="pt2" data-ministry="plan"></td>
+        <td class="slot cell-green" data-tier="pt2" data-ministry="worship"></td>
+        <td class="slot cell-green" data-tier="pt2" data-ministry="training"></td>
+        <td class="slot cell-green" data-tier="pt2" data-ministry="mission"></td>
+        <td class="slot cell-green" data-tier="pt2" data-ministry="service"></td>
+        <td class="slot cell-empty" data-tier="pt2" data-ministry="campus"></td>
+      </tr>
+
+      <!-- 파트 1년차 -->
+      <tr data-tier-row="pt1">
+        <th class="row-header">파트 1년차</th>
+        <td class="slot cell-empty"  data-tier="pt1" data-ministry="plan"></td>
+        <td class="slot cell-yellow" data-tier="pt1" data-ministry="worship"></td>
+        <td class="slot cell-empty"  data-tier="pt1" data-ministry="training"></td>
+        <td class="slot cell-yellow" data-tier="pt1" data-ministry="mission"></td>
+        <td class="slot cell-yellow" data-tier="pt1" data-ministry="service"></td>
+        <td class="slot cell-empty"  data-tier="pt1" data-ministry="campus"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 2. 오른쪽 : 화살표 버튼 + 이름 스티커 -->
+  <div class="side-panel">
+
+    <div>
+      <div class="side-title">전임 (2026년 기준, 분과장 제외)</div>
+      <div class="small-caption">화살표를 누르면 해당 연차의 블랭크에 우선순위 번호가 자동 배치됩니다.</div>
+
+      <!-- 전임 3년차~ -->
+      <div class="tier-block">
+        <div class="tier-header">
+          <span class="tier-title">전임 3년차~</span>
+          <button class="tier-btn" data-tier-btn="ft3">▶ 드래프트 번호 넣기</button>
         </div>
-
-        <div class="roster-area">
-            <div id="roster-area-sections">
-                <h2>드래프트 명단</h2>
-                </div>
+        <div class="name-tags">
+          <span class="tag">박성원</span>
+          <span class="tag">박성환</span>
+          <span class="tag">이진기</span>
+          <span class="tag">최재윤</span>
         </div>
+      </div>
+
+      <!-- 전임 1~2년 -->
+      <div class="tier-block">
+        <div class="tier-header">
+          <span class="tier-title">전임 1~2년</span>
+          <button class="tier-btn" data-tier-btn="ft12">▶ 드래프트 번호 넣기</button>
+        </div>
+        <div class="name-tags">
+          <span class="tag">김현</span>
+          <span class="tag">길한솔</span>
+          <span class="tag">이승호</span>
+          <span class="tag">최강호</span>
+          <span class="tag">홍근영</span>
+        </div>
+      </div>
     </div>
 
-    <script>
-        /* --- JavaScript Start --- */
-        document.addEventListener('DOMContentLoaded', () => {
-            // 1. 명단 데이터
-            const rosterData = {
-                'B': { name: '전임 1~2년차', list: ['김현', '길한솔', '이승호', '최강호', '홍근영'], count: 5, colorClass: 'sticker-B' },
-                'A': { name: '전임 3년차~', list: ['박성원', '박성훈', '이진기', '최재윤'], count: 4, colorClass: 'sticker-A' },
-                'E': { name: '파트 1년차', list: ['이나단', '신지수', '김영범', '신입'], count: 4, colorClass: 'sticker-E' },
-                'D': { name: '파트 2년차', list: ['권혁성', '박시온', '박지윤', '배윤주', '오진우', '이은찬', '조영찬'], count: 7, colorClass: 'sticker-D' },
-                'C': { name: '파트 3년차', list: ['구길모', '이예찬', '장건우', '정찬중'], count: 4, colorClass: 'sticker-C' }
-            };
+    <div>
+      <div class="side-title">파트 (2026년 기준)</div>
 
-            const sectionsContainer = document.getElementById('roster-area-sections');
-            const priorityButtons = document.querySelectorAll('.priority-btn');
-            const draftBlanks = document.querySelectorAll('.draft-slot.blank'); 
-            
-            // 빈칸 배열 (각 티어별 순서대로)
-            const tierBlanks = {
-                'B': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="B"]')), 
-                'A': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="A"]')), 
-                'E': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="E"]')), 
-                'D': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="D"]')), 
-                'C': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="C"]'))
-            };
-            
-            // Fisher-Yates 셔플 함수
-            function shuffle(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
-            }
+      <!-- 파트 3년차 -->
+      <div class="tier-block">
+        <div class="tier-header">
+          <span class="tier-title">파트 3년차~</span>
+          <button class="tier-btn" data-tier-btn="pt3">▶ 드래프트 번호 넣기</button>
+        </div>
+        <div class="name-tags">
+          <span class="tag">구길모</span>
+          <span class="tag">이예찬</span>
+          <span class="tag">장건우</span>
+          <span class="tag">정찬종</span>
+        </div>
+      </div>
 
-            // 2. 명단 스티커 생성
-            function createStickers() {
-                sectionsContainer.innerHTML = '<h2>드래프트 명단</h2>';
-                
-                Object.keys(rosterData).forEach(tier => {
-                    const data = rosterData[tier];
-                    
-                    const section = document.createElement('div');
-                    section.className = 'roster-section';
-                    
-                    const title = document.createElement('h3');
-                    title.textContent = data.name;
-                    section.appendChild(title);
-                    
-                    data.list.forEach(name => {
-                        const sticker = document.createElement('div');
-                        sticker.className = `name-sticker ${data.colorClass}`;
-                        sticker.draggable = true;
-                        sticker.textContent = name;
-                        sticker.id = `sticker-${name}`;
-                        sticker.setAttribute('data-tier', tier);
-                        section.appendChild(sticker);
-                    });
-                    sectionsContainer.appendChild(section);
-                });
-            }
+      <!-- 파트 2년차 -->
+      <div class="tier-block">
+        <div class="tier-header">
+          <span class="tier-title">파트 2년차</span>
+          <button class="tier-btn" data-tier-btn="pt2">▶ 드래프트 번호 넣기</button>
+        </div>
+        <div class="name-tags">
+          <span class="tag">권혁성</span>
+          <span class="tag">박시온</span>
+          <span class="tag">박지윤</span>
+          <span class="tag">배윤주</span>
+          <span class="tag">오진우</span>
+          <span class="tag">이은찬</span>
+          <span class="tag">조영찬</span>
+        </div>
+      </div>
 
-            // 3. 우선순위 부여 로직 (순차적 번호 부여 + 랜덤 칸 배열 + 0.7초 간격)
-            function setPriorities(tier) {
-                const blanks = tierBlanks[tier].filter(b => !b.classList.contains('filled'));
-                if (blanks.length === 0) return;
-
-                // 1. 슬롯을 1순위와 2순위로 분리
-                let round1Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '1');
-                let round2Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '2');
-                
-                // 2. 각 라운드 내에서 무작위로 섞기 (랜덤 칸 배열)
-                round1Slots = shuffle(round1Slots);
-                round2Slots = shuffle(round2Slots);
-
-                // 3. 최종 할당 순서 정의 (1순위 칸 먼저, 2순위 칸 나중에)
-                // 이 순서가 곧 번호가 순차적으로 등장하는 순서이자, 
-                // 1부터 순차적인 번호가 할당되는 랜덤 칸의 순서가 됩니다.
-                const finalAssignmentOrder = [...round1Slots, ...round2Slots];
-                
-                // 4. 순차적으로 0.7초 간격으로 1부터 번호 부여
-                finalAssignmentOrder.forEach((slot, index) => {
-                    const priorityNumber = index + 1; // 1, 2, 3, 4, ... 순차적 번호
-                    const delayTime = index * 700; // 0.7초 간격
-
-                    // 딜레이 후 번호 부여
-                    setTimeout(() => {
-                        slot.textContent = priorityNumber;
-                    }, delayTime);
-                });
-            }
-
-            // 4. 투표 버튼 이벤트 리스너
-            priorityButtons.forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const tier = e.currentTarget.getAttribute('data-tier');
-                    setPriorities(tier);
-                });
-            });
-
-            // 5. 드래그 앤 드롭 이벤트 처리 (기존 로직 유지)
-            let draggedSticker = null;
-
-            sectionsContainer.addEventListener('dragstart', (e) => {
-                if (e.target.classList.contains('name-sticker')) {
-                    draggedSticker = e.target;
-                    e.dataTransfer.setData('text/plain', draggedSticker.textContent);
-                    e.dataTransfer.setData('tier', draggedSticker.getAttribute('data-tier'));
-                    setTimeout(() => {
-                        draggedSticker.classList.add('dragging');
-                    }, 0);
-                }
-            });
-
-            sectionsContainer.addEventListener('dragend', () => {
-                if (draggedSticker) {
-                    draggedSticker.classList.remove('dragging');
-                    draggedSticker = null;
-                }
-            });
-
-            draftBlanks.forEach(blank => {
-                blank.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    
-                    const isRanked = !isNaN(parseInt(blank.textContent));
-                    const dragTier = e.dataTransfer.getData('tier');
-                    const slotTier = blank.getAttribute('data-tier');
-                    const isTierMatch = dragTier === slotTier;
-                    
-                    if (!blank.classList.contains('filled') && isRanked && isTierMatch) {
-                        blank.classList.add('drag-over');
-                    }
-                });
-
-                blank.addEventListener('dragleave', () => {
-                    blank.classList.remove('drag-over');
-                });
-
-                blank.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    blank.classList.remove('drag-over');
-                    
-                    const isRanked = !isNaN(parseInt(blank.textContent));
-                    const isTierMatch = draggedSticker && draggedSticker.getAttribute('data-tier') === blank.getAttribute('data-tier');
-
-                    if (draggedSticker && !blank.classList.contains('filled') && isRanked && isTierMatch) {
-                        const name = draggedSticker.textContent;
-                        
-                        // 1. 칸 채우기
-                        blank.textContent = name;
-                        blank.classList.add('filled');
-                        
-                        // 2. 스티커 숨기기
-                        draggedSticker.classList.add('hidden');
-                    }
-                });
-            });
-
-            // 초기화 및 실행
-            createStickers();
-        });
-        /* --- JavaScript End --- */
-    </script>
-</body>
-</html>
+      <!-- 파트 1년차 -->
