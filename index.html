@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종 보완 4)</title>
+    <title>2026 대학청년부 분과 드래프트 (최종 보완 5)</title>
     <style>
         /* --- CSS Start --- */
         body {
@@ -56,7 +56,7 @@
             font-size: 0.9em;
         }
 
-        /* 티어별 배경색 (테이블 줄 - 변경 반영) */
+        /* 티어별 배경색 (테이블 줄) */
         .darkgray-bg { background-color: darkgray; } /* 전임 3년차, 파트 3년차 */
         .lightgray-bg-row { background-color: lightgray; }
         .row-D { background-color: #e6e6e6; } /* 파트 2년차 */
@@ -328,7 +328,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             // 1. 명단 데이터
             const rosterData = {
-                // 순서 변경 반영
                 'B': { name: '전임 1~2년차', list: ['김현', '길한솔', '이승호', '최강호', '홍근영'], count: 5, colorClass: 'sticker-B' },
                 'A': { name: '전임 3년차~', list: ['박성원', '박성훈', '이진기', '최재윤'], count: 4, colorClass: 'sticker-A' },
                 'E': { name: '파트 1년차', list: ['이나단', '신지수', '김영범', '신입'], count: 4, colorClass: 'sticker-E' },
@@ -349,6 +348,15 @@
                 'C': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="C"]'))
             };
             
+            // Fisher-Yates 셔플 함수
+            function shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
             // 2. 명단 스티커 생성
             function createStickers() {
                 sectionsContainer.innerHTML = '<h2>드래프트 명단</h2>';
@@ -376,22 +384,28 @@
                 });
             }
 
-            // 3. 우선순위 부여 로직 (1초 간격 순차적 번호 부여)
+            // 3. 우선순위 부여 로직 (랜덤 순위 + 0.7초 간격 순차적 등장)
             function setPriorities(tier) {
                 const blanks = tierBlanks[tier].filter(b => !b.classList.contains('filled'));
                 if (blanks.length === 0) return;
 
-                // 1순위 칸 (data-slot-order="1")을 먼저, 2순위 칸을 나중에 배치하여 순차 번호 부여 순서를 정의
+                // 1. 순위 번호 리스트 생성 및 랜덤하게 섞기
+                const totalSlots = blanks.length;
+                let priorities = Array.from({ length: totalSlots }, (_, i) => i + 1); // 1부터 N까지 순위
+                priorities = shuffle(priorities); // 번호를 랜덤하게 섞음
+
+                // 2. 슬롯 배열 순서 정의 (1순위 칸 먼저, 2순위 칸 나중에)
                 const round1Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '1');
                 const round2Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '2');
                 
-                // 순서대로 번호가 부여될 슬롯 목록
-                const orderedSlots = [...round1Slots, ...round2Slots];
+                // 순서대로 등장할 슬롯 목록 (등장 순서 정의)
+                const orderedSlotsForDisplay = [...round1Slots, ...round2Slots];
                 
-                // 1초 간격으로 순차적 번호 부여
-                orderedSlots.forEach((slot, index) => {
-                    const priorityNumber = index + 1;
-                    const delayTime = index * 1000; // 0ms, 1000ms, 2000ms, ...
+                // 3. 순서에 따라 0.7초 간격으로 랜덤하게 섞인 번호 부여
+                orderedSlotsForDisplay.forEach((slot, index) => {
+                    // 랜덤하게 섞인 priorities 리스트에서 순차적으로 번호를 가져옴
+                    const priorityNumber = priorities[index]; 
+                    const delayTime = index * 700; // 0.7초 간격
 
                     setTimeout(() => {
                         slot.textContent = priorityNumber;
