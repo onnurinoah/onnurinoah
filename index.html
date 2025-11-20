@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종 보완 7)</title>
+    <title>2026 대학청년부 분과 드래프트 (최종 보완 8)</title>
     <style>
         /* --- CSS Start --- */
         body {
@@ -365,7 +365,7 @@
             const draftBlanks = document.querySelectorAll('.draft-slot.blank'); 
             const undoButton = document.getElementById('undo-button'); 
 
-            // 상태 저장 스택: { slotElement: DOM, name: string } 형태로 저장
+            // 상태 저장 스택: { slotElement: DOM, name: string, originalText: string } 형태로 저장
             const historyStack = [];
             
             // 빈칸 배열 (각 티어별 순서대로)
@@ -454,7 +454,7 @@
                 });
             });
 
-            // 6. 드래그 앤 드롭 이벤트 처리 (기존 로직 유지)
+            // 6. 드래그 앤 드롭 이벤트 처리
             let draggedSticker = null;
 
             sectionsContainer.addEventListener('dragstart', (e) => {
@@ -503,18 +503,20 @@
                     if (draggedSticker && !blank.classList.contains('filled') && isRanked && isTierMatch) {
                         const name = draggedSticker.textContent;
                         
-                        // 1. 칸 채우기
+                        // 1. 상태 저장 (Undo 기능을 위해: 현재 텍스트(순위 번호) 저장)
+                        historyStack.push({
+                            slotElement: blank,
+                            name: name,
+                            originalText: blank.textContent // 순위 번호 저장
+                        });
+                        
+                        // 2. 칸 채우기 (이름으로 덮어쓰기)
                         blank.textContent = name;
                         blank.classList.add('filled');
                         
-                        // 2. 스티커 숨기기
+                        // 3. 스티커 숨기기
                         draggedSticker.classList.add('hidden');
 
-                        // 3. 상태 저장 (Undo 기능을 위해)
-                        historyStack.push({
-                            slotElement: blank,
-                            name: name
-                        });
                         updateUndoButton();
                     }
                 });
@@ -526,54 +528,19 @@
                     const lastAction = historyStack.pop();
                     const slot = lastAction.slotElement;
                     const name = lastAction.name;
+                    const originalText = lastAction.originalText;
 
-                    // 1. 칸을 다시 빈칸 상태로 되돌리기 (순위 번호 텍스트를 유지)
+                    // 1. 슬롯 복구: 채워진 상태 해제 및 순위 번호 복구
                     slot.classList.remove('filled');
-                    // 칸의 텍스트를 다시 순위 번호로 설정
-                    // (주의: 드래그 시 순위 번호가 이름으로 덮어씌워졌으므로, 순위 번호를 찾는 로직 필요)
-                    // 현재는 드래그 시 번호가 이름으로 덮어씌워지므로, Undo 시에는 
-                    // 해당 칸이 다시 비어있는(순위 번호가 표시된) 상태로 돌아가야 합니다.
-                    // 현재는 명확하게 순위 번호를 다시 가져오는 방법이 없으므로, 
-                    // 임시로 '?' 또는 'Undo'라고 표시하거나, 번호 부여를 다시 해야 하지만,
-                    // 가장 간단한 방법은 **칸의 텍스트를 Undo 전의 순위 번호로 복구**하는 것입니다.
-                    // (이 구현에서는 순위 번호는 그대로 유지되고, filled 상태만 해제됩니다.)
-                    // 
-                    // BUT: 순위 번호는 `setPriorities`에서 부여된 값입니다. 
-                    // 여기서는 단순히 '순위 번호'가 아닌 **원래 내용**을 복원해야 합니다.
-                    // 이 구현에서는 Undo 시 **순위 번호**를 복원하는 것이 목적입니다.
-                    
-                    // 가장 최근의 드래그된 칸의 순위 번호를 찾기는 복잡하므로,
-                    // 이전에 저장된 '순위 번호'를 찾기보다는, 
-                    // **드래그 직전의 텍스트** (순위 번호)를 함께 저장하는 것이 이상적입니다.
-                    
-                    // 임시방편으로, 순위 번호가 부여된 빈칸은 텍스트가 숫자로 되어있습니다.
-                    // 여기서는 안전하게 **순위 번호를 다시 계산하거나 저장하지 않았으므로, 
-                    // 번호가 없는 '?' 상태로 임시 복구**하고, 스티커를 되살립니다. 
-                    // (재투표 버튼을 누르면 번호가 다시 부여됩니다.)
+                    slot.textContent = originalText; // 순위 번호 복구
 
-                    // 임시로, 숫자를 복구하는 로직 없이, filled 상태만 해제하고 텍스트는 지우지 않습니다.
-                    // *드롭 이벤트에서 순위 번호를 저장하지 않았기 때문에, 순위 번호를 복구할 수 없습니다.*
-                    // 가장 중요한 **스티커와 슬롯 상태**를 복구합니다.
-                    
-                    // 1. 슬롯 복구: 채워진 상태 해제
-                    slot.classList.remove('filled');
                     // 2. 스티커 복구: 숨김 상태 해제
                     const sticker = document.getElementById(`sticker-${name}`);
                     if (sticker) {
                         sticker.classList.remove('hidden');
                     }
                     
-                    // 3. 슬롯 텍스트 복구 (순위 번호가 다시 보이도록):
-                    // 드래그 시 텍스트가 이름으로 바뀌었기 때문에, 여기서 텍스트를 지워야
-                    // 드래그 전 상태로 돌아가는데, 드래그 전 텍스트가 없으므로...
-                    // **가장 최근에 부여된 순위 번호(숫자)를 찾는 것은 복잡합니다. 
-                    // 여기서는 편의를 위해 일단 텍스트를 지우고, 재투표를 유도합니다.**
-                    slot.textContent = ''; // 텍스트를 지워서 빈칸처럼 보이게 함 (번호가 사라짐)
-                    
                     updateUndoButton();
-
-                    // 참고: 순위 번호를 복구하려면, 드롭 이벤트 시점에 해당 칸의 순위 번호를 
-                    // historyStack에 함께 저장해야 합니다. (예: `slot.textContent`를 저장)
                 }
             });
 
