@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종 보완 2)</title>
+    <title>2026 대학청년부 분과 드래프트 (최종 보완 3)</title>
     <style>
         /* --- CSS Start --- */
         body {
@@ -56,12 +56,11 @@
             font-size: 0.9em;
         }
 
-        /* 티어별 배경색 (테이블 줄 - 순서 변경 반영) */
-        .darkgray-bg { background-color: darkgray; }
+        /* 티어별 배경색 (테이블 줄 - 변경 반영) */
+        .darkgray-bg { background-color: darkgray; } /* 전임 3년차, 파트 3년차 */
         .lightgray-bg-row { background-color: lightgray; }
-        .row-C { background-color: #ffcccc; }
-        .row-D { background-color: #e6e6e6; }
-        .row-E { background-color: #f2f2f2; }
+        .row-D { background-color: #e6e6e6; } /* 파트 2년차 */
+        .row-E { background-color: #f2f2f2; } /* 파트 1년차 */
 
 
         /* --- 드래프트 칸 스타일 --- */
@@ -196,7 +195,7 @@
                     <tr>
                         <th>연차</th>
                         <th>기획(최대흥)</th>
-                        <th>예배(최대흥)</th>
+                        <th>예배(김태광)</th>
                         <th>양육(신경훈)</th>
                         <th>선교(조은광)</th>
                         <th>사역(전진)</th>
@@ -295,7 +294,7 @@
                         <td></td>
                         <td><button class="priority-btn" data-tier="D">🗳️</button></td>
                     </tr>
-                    <tr data-tier="C" class="row-C">
+                    <tr data-tier="C" class="darkgray-bg">
                         <td>파트 3년차</td>
                         <td></td>
                         <td>
@@ -321,16 +320,15 @@
             <div id="roster-area-sections">
                 <h2>드래프트 명단</h2>
                 </div>
-            
-            </div>
+        </div>
     </div>
 
     <script>
         /* --- JavaScript Start --- */
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. 명단 데이터 (업데이트된 순서 및 명단 반영)
+            // 1. 명단 데이터
             const rosterData = {
-                // 새로운 순서에 맞춰서 객체에 데이터를 저장.
+                // 순서 변경 반영
                 'B': { name: '전임 1~2년차', list: ['김현', '길한솔', '이승호', '최강호', '홍근영'], count: 5, colorClass: 'sticker-B' },
                 'A': { name: '전임 3년차~', list: ['박성원', '박성훈', '이진기', '최재윤'], count: 4, colorClass: 'sticker-A' },
                 'E': { name: '파트 1년차', list: ['이나단', '신지수', '김영범', '신입'], count: 4, colorClass: 'sticker-E' },
@@ -342,29 +340,19 @@
             const priorityButtons = document.querySelectorAll('.priority-btn');
             const draftBlanks = document.querySelectorAll('.draft-slot.blank'); 
             
-            // 전임 1~2년차의 '기획' 칸은 드래프트 대상에서 제외되므로, B 티어의 슬롯 개수는 5개로 계산됨.
+            // 빈칸 배열 (각 티어별 순서대로)
             const tierBlanks = {
-                'B': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="B"]')), // 5 slots
-                'A': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="A"]')), // 4 slots
-                'E': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="E"]')), // 4 slots
-                'D': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="D"]')), // 7 slots
-                'C': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="C"]'))  // 4 slots
+                'B': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="B"]')), 
+                'A': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="A"]')), 
+                'E': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="E"]')), 
+                'D': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="D"]')), 
+                'C': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="C"]'))
             };
             
-            // Fisher-Yates 셔플 함수
-            function shuffle(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
-            }
-
             // 2. 명단 스티커 생성 (그룹화 및 색상 적용)
             function createStickers() {
                 sectionsContainer.innerHTML = '<h2>드래프트 명단</h2>';
                 
-                // rosterData의 순서(B, A, E, D, C)대로 섹션을 생성하기 위해 Object.keys를 사용
                 Object.keys(rosterData).forEach(tier => {
                     const data = rosterData[tier];
                     
@@ -388,7 +376,7 @@
                 });
             }
 
-            // 3. 우선순위 부여 로직 (랜덤 및 형평성 규칙 적용)
+            // 3. 우선순위 부여 로직 (순차적 번호 부여로 변경)
             function setPriorities(tier) {
                 const blanks = tierBlanks[tier].filter(b => !b.classList.contains('filled'));
                 if (blanks.length === 0) return;
@@ -397,25 +385,18 @@
                 const round1Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '1');
                 const round2Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '2');
                 
-                const totalSlots = blanks.length;
-                let priorities = Array.from({ length: totalSlots }, (_, i) => i + 1); // 1부터 N까지 순위
-                
-                // 2. 1라운드(1순위 칸) 순위: 1부터 round1Slots.length까지 사용
-                let round1Priorities = priorities.slice(0, round1Slots.length);
-                round1Priorities = shuffle(round1Priorities); 
+                const totalRound1 = round1Slots.length;
+                let currentPriority = 1;
 
-                // 3. 2라운드(2순위 칸) 순위: round1Slots.length + 1 부터 totalSlots까지 사용
-                let round2Priorities = priorities.slice(round1Slots.length); 
-                round2Priorities = shuffle(round2Priorities);
-
-                // 4. 1순위 칸에 순위 부여 (공평하게 랜덤)
-                round1Slots.forEach((slot, index) => {
-                    slot.textContent = round1Priorities[index];
+                // 2. 1순위 칸에 순차적으로 번호 부여
+                // (공평성 규칙 유지: 모든 팀의 1순위 칸이 먼저 번호를 받음)
+                round1Slots.forEach(slot => {
+                    slot.textContent = currentPriority++;
                 });
 
-                // 5. 2순위 칸에 후순위 번호 부여 (한 바퀴 돈 후의 후순위)
-                round2Slots.forEach((slot, index) => {
-                    slot.textContent = round2Priorities[index];
+                // 3. 2순위 칸에 남은 순차적 번호 부여 (후순위)
+                round2Slots.forEach(slot => {
+                    slot.textContent = currentPriority++;
                 });
             }
 
@@ -427,7 +408,7 @@
                 });
             });
 
-            // 5. 드래그 앤 드롭 이벤트 처리
+            // 5. 드래그 앤 드롭 이벤트 처리 (기존 로직 유지)
             let draggedSticker = null;
 
             sectionsContainer.addEventListener('dragstart', (e) => {
