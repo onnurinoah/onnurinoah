@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종 보완 5)</title>
+    <title>2026 대학청년부 분과 드래프트 (최종 보완 6)</title>
     <style>
         /* --- CSS Start --- */
         body {
@@ -384,29 +384,30 @@
                 });
             }
 
-            // 3. 우선순위 부여 로직 (랜덤 순위 + 0.7초 간격 순차적 등장)
+            // 3. 우선순위 부여 로직 (순차적 번호 부여 + 랜덤 칸 배열 + 0.7초 간격)
             function setPriorities(tier) {
                 const blanks = tierBlanks[tier].filter(b => !b.classList.contains('filled'));
                 if (blanks.length === 0) return;
 
-                // 1. 순위 번호 리스트 생성 및 랜덤하게 섞기
-                const totalSlots = blanks.length;
-                let priorities = Array.from({ length: totalSlots }, (_, i) => i + 1); // 1부터 N까지 순위
-                priorities = shuffle(priorities); // 번호를 랜덤하게 섞음
+                // 1. 슬롯을 1순위와 2순위로 분리
+                let round1Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '1');
+                let round2Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '2');
+                
+                // 2. 각 라운드 내에서 무작위로 섞기 (랜덤 칸 배열)
+                round1Slots = shuffle(round1Slots);
+                round2Slots = shuffle(round2Slots);
 
-                // 2. 슬롯 배열 순서 정의 (1순위 칸 먼저, 2순위 칸 나중에)
-                const round1Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '1');
-                const round2Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '2');
+                // 3. 최종 할당 순서 정의 (1순위 칸 먼저, 2순위 칸 나중에)
+                // 이 순서가 곧 번호가 순차적으로 등장하는 순서이자, 
+                // 1부터 순차적인 번호가 할당되는 랜덤 칸의 순서가 됩니다.
+                const finalAssignmentOrder = [...round1Slots, ...round2Slots];
                 
-                // 순서대로 등장할 슬롯 목록 (등장 순서 정의)
-                const orderedSlotsForDisplay = [...round1Slots, ...round2Slots];
-                
-                // 3. 순서에 따라 0.7초 간격으로 랜덤하게 섞인 번호 부여
-                orderedSlotsForDisplay.forEach((slot, index) => {
-                    // 랜덤하게 섞인 priorities 리스트에서 순차적으로 번호를 가져옴
-                    const priorityNumber = priorities[index]; 
+                // 4. 순차적으로 0.7초 간격으로 1부터 번호 부여
+                finalAssignmentOrder.forEach((slot, index) => {
+                    const priorityNumber = index + 1; // 1, 2, 3, 4, ... 순차적 번호
                     const delayTime = index * 700; // 0.7초 간격
 
+                    // 딜레이 후 번호 부여
                     setTimeout(() => {
                         slot.textContent = priorityNumber;
                     }, delayTime);
