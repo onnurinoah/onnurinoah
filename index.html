@@ -2,35 +2,38 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종 보완 8)</title>
+    <title>2026 대학청년부 분과 드래프트 (최종 보완 10)</title>
     <style>
         /* --- CSS Start --- */
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 15px; 
             background-color: #f4f4f4;
+            /* zoom: 0.9; 제거 */
         }
 
         header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .container {
             display: flex;
-            gap: 20px;
+            gap: 15px;
         }
 
         .draft-area {
-            flex: 3;
+            flex: 3; /* 드래프트 테이블 영역 더 축소 (3/4) */
             overflow-x: auto;
+            max-width: 75%; /* 최대 폭 설정으로 화면 대비 테이블 크기 제한 */
         }
 
         .roster-area {
-            flex: 1;
+            flex: 1; /* 명단 스티커 영역 확대 (1/4) */
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
+            min-width: 280px; /* 로스터 영역 최소 폭 증가 */
         }
 
         /* --- 테이블 스타일 --- */
@@ -38,169 +41,108 @@
             width: 100%;
             border-collapse: collapse;
             background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            min-width: 800px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+            table-layout: fixed;
         }
 
         th, td {
             border: 1px solid #ccc;
-            padding: 5px;
+            padding: 5px; /* 패딩 약간 증가 */
             text-align: center;
-            min-width: 60px;
             vertical-align: top;
+            font-size: 0.9em; /* 폰트 크기 약간 증가 */
+            word-break: keep-all;
         }
+        
+        /* 컬럼 폭 조정 (총 7개 컬럼) - 전체 폭을 줄이면서 비율 조정 */
+        thead tr th:nth-child(1) { width: 10%; } /* 연차 */
+        thead tr th:nth-child(2) { width: 13%; } /* 기획 */
+        thead tr th:nth-child(3) { width: 13%; } /* 예배 */
+        thead tr th:nth-child(4) { width: 13%; } /* 양육 */
+        thead tr th:nth-child(5) { width: 13%; } /* 선교 */
+        thead tr th:nth-child(6) { width: 13%; } /* 사역 */
+        thead tr th:nth-child(7) { width: 15%; } /* 캠퍼스 */
+        thead tr th:nth-child(8) { width: 5%; }  /* 투표 버튼 */
+
 
         thead th {
             background-color: #333;
             color: white;
-            font-size: 0.9em;
+            font-size: 0.85em; /* 헤더 폰트 크기 약간 증가 */
         }
 
         /* 티어별 배경색 (테이블 줄) */
-        .darkgray-bg { background-color: darkgray; } /* 전임 3년차, 파트 3년차 */
+        .darkgray-bg { background-color: darkgray; }
         .lightgray-bg-row { background-color: lightgray; }
-        .row-D { background-color: #e6e6e6; } /* 파트 2년차 */
-        .row-E { background-color: #f2f2f2; } /* 파트 1년차 */
+        .row-D { background-color: #e6e6e6; }
+        .row-E { background-color: #f2f2f2; }
 
 
         /* --- 드래프트 칸 스타일 --- */
         .draft-slots {
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            padding: 2px 0;
+            gap: 1px;
+            padding: 1px 0;
         }
         
         .draft-slot {
-            height: 30px;
+            height: 28px; /* 높이 약간 증가 */
             border: 1px solid #ccc;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.2em;
+            font-size: 1.1em; /* 폰트 크기 증가 */
             color: #333;
+            line-height: 1.1;
         }
         
         .draft-slot.blank {
-            cursor: pointer;
-            color: #007bff; /* 우선순위 번호 색상 */
+            color: #007bff;
         }
 
         .draft-slot.blank.filled {
             font-weight: normal;
-            font-size: 1em;
-            cursor: default;
-            color: #333;
-            border: 1px solid #aaa;
+            font-size: 1em; /* 채워진 이름 폰트 크기 증가 */
         }
         
         /* 고정된 칸 스타일 */
         .draft-slot.fixed-slot {
-            background-color: #c0c0c0 !important;
-            color: #444;
             font-size: 1em;
-            cursor: default;
-            font-weight: normal;
-            border: 1px solid #aaa;
         }
 
         /* 칸 배경색 (기존 요청대로 유지) */
-        .lightgreen-bg-slot { background-color: #ccffcc; } /* 전임 3년차 (연한 초록) */
-        .lightyellow-bg-slot { background-color: #ffffcc; } /* 전임 1~2년차 (연한 노랑) */
-        .lightcoral-bg-slot { background-color: #ffdddd; } /* 파트 3년차 (연한 빨강) */
-        .lightblue-bg-slot { background-color: #cceeff; } /* 파트 2년차 (연한 파랑) */
-        .lightgray-bg-slot { background-color: #eeeeee; } /* 파트 1년차 (연한 회색) */
+        .lightgreen-bg-slot { background-color: #ccffcc; }
+        .lightyellow-bg-slot { background-color: #ffffcc; }
+        .lightcoral-bg-slot { background-color: #ffdddd; }
+        .lightblue-bg-slot { background-color: #cceeff; }
+        .lightgray-bg-slot { background-color: #eeeeee; }
 
-        /* 드래그 오버 효과 */
-        .draft-slot.blank.drag-over {
-            box-shadow: 0 0 10px 3px rgba(0, 123, 255, 0.6) inset;
-        }
         
         /* --- 버튼 스타일 --- */
         .priority-btn {
-            padding: 5px 10px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1.2em;
-        }
-
-        .priority-btn:hover {
-            background-color: #0056b3;
+            padding: 4px 7px;
+            font-size: 1.1em;
         }
 
         /* 되돌리기 버튼 스타일 */
         #undo-button {
-            padding: 10px 20px;
-            font-size: 1em;
-            background-color: #dc3545; /* 빨간색 계열 */
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-            transition: background-color 0.3s;
+            padding: 8px 15px;
+            font-size: 1em; /* 폰트 크기 증가 */
         }
 
-        #undo-button:hover {
-            background-color: #c82333;
-        }
-
-        #undo-button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-        }
 
         /* --- 명단 스티커 스타일 --- */
-        #roster-area-sections {
-            border: 1px solid #ccc;
-            padding: 10px;
-            background-color: #fff;
-        }
-        
-        .roster-section {
-            margin-bottom: 10px;
-            padding: 5px;
-            border-bottom: 1px solid #eee;
-        }
-        
         .roster-section h3 {
             margin: 5px 0;
-            font-size: 1.1em;
-            border-left: 5px solid #007bff;
-            padding-left: 5px;
+            font-size: 1.1em; 
         }
 
         .name-sticker {
-            display: inline-block;
-            padding: 8px 12px;
-            margin: 4px;
-            border: 1px solid #ffd54f;
-            border-radius: 5px;
-            cursor: grab;
-            font-weight: bold;
-            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-            opacity: 1;
-            transition: opacity 0.3s;
-        }
-
-        /* 스티커 배경색 */
-        .sticker-A { background-color: #ccffcc; } /* 연한 초록 */
-        .sticker-B { background-color: #ffffcc; } /* 연한 노랑 */
-        .sticker-C { background-color: #ffdddd; } /* 연한 빨강 */
-        .sticker-D { background-color: #cceeff; } /* 연한 파랑 */
-        .sticker-E { background-color: #eeeeee; } /* 연한 회색 */
-
-        .name-sticker.dragging {
-            opacity: 0.7;
-        }
-
-        .name-sticker.hidden {
-            display: none;
+            padding: 7px 10px; 
+            margin: 4px; 
+            font-size: 1em; /* 폰트 크기 증가 */
         }
         /* --- CSS End --- */
     </style>
@@ -484,6 +426,7 @@
                     const slotTier = blank.getAttribute('data-tier');
                     const isTierMatch = dragTier === slotTier;
                     
+                    // 순위 번호가 있고, 아직 채워지지 않았으며, 티어가 일치할 때만 드래그 오버 허용
                     if (!blank.classList.contains('filled') && isRanked && isTierMatch) {
                         blank.classList.add('drag-over');
                     }
@@ -530,7 +473,7 @@
                     const name = lastAction.name;
                     const originalText = lastAction.originalText;
 
-                    // 1. 슬롯 복구: 채워진 상태 해제 및 순위 번호 복구
+                    // 1. 슬롯 복구: 채워진 상태 해제 및 순위 번호 복구 (다시 드래그 가능 상태)
                     slot.classList.remove('filled');
                     slot.textContent = originalText; // 순위 번호 복구
 
