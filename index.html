@@ -2,38 +2,35 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종 보완 10)</title>
+    <title>2026 대학청년부 분과 드래프트 (최종 보완 11)</title>
     <style>
         /* --- CSS Start --- */
         body {
             font-family: Arial, sans-serif;
-            margin: 15px; 
+            margin: 20px;
             background-color: #f4f4f4;
-            /* zoom: 0.9; 제거 */
         }
 
         header {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .container {
             display: flex;
-            gap: 15px;
+            gap: 20px;
         }
 
         .draft-area {
-            flex: 3; /* 드래프트 테이블 영역 더 축소 (3/4) */
+            flex: 3; /* 드래프트 영역 비율 유지 (3/4) */
             overflow-x: auto;
-            max-width: 75%; /* 최대 폭 설정으로 화면 대비 테이블 크기 제한 */
         }
 
         .roster-area {
-            flex: 1; /* 명단 스티커 영역 확대 (1/4) */
+            flex: 1; /* 명단 영역 비율 유지 (1/4) */
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            min-width: 280px; /* 로스터 영역 최소 폭 증가 */
+            gap: 20px;
         }
 
         /* --- 테이블 스타일 --- */
@@ -41,34 +38,36 @@
             width: 100%;
             border-collapse: collapse;
             background-color: #fff;
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-            table-layout: fixed;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            /* min-width 삭제하여 유연하게 축소 가능하도록 함 */
+            table-layout: fixed; /* 셀 폭을 고정하여 테이블 폭을 제어 */
         }
 
         th, td {
             border: 1px solid #ccc;
-            padding: 5px; /* 패딩 약간 증가 */
+            padding: 4px; /* 패딩을 줄여서 가로 폭 축소 */
             text-align: center;
+            /* min-width: 60px; 삭제 */
             vertical-align: top;
-            font-size: 0.9em; /* 폰트 크기 약간 증가 */
-            word-break: keep-all;
+            font-size: 0.95em; /* 테이블 일반 셀 폰트 크기 약간 확대 */
+            word-break: keep-all; /* 단어 단위로 줄바꿈 방지 */
         }
-        
-        /* 컬럼 폭 조정 (총 7개 컬럼) - 전체 폭을 줄이면서 비율 조정 */
-        thead tr th:nth-child(1) { width: 10%; } /* 연차 */
-        thead tr th:nth-child(2) { width: 13%; } /* 기획 */
-        thead tr th:nth-child(3) { width: 13%; } /* 예배 */
-        thead tr th:nth-child(4) { width: 13%; } /* 양육 */
-        thead tr th:nth-child(5) { width: 13%; } /* 선교 */
-        thead tr th:nth-child(6) { width: 13%; } /* 사역 */
-        thead tr th:nth-child(7) { width: 15%; } /* 캠퍼스 */
-        thead tr th:nth-child(8) { width: 5%; }  /* 투표 버튼 */
 
+        /* 컬럼 폭 조정 (총 8개 컬럼) */
+        thead tr th:nth-child(1) { width: 10%; } /* 연차 */
+        thead tr th:nth-child(2) { width: 12%; } /* 기획 */
+        thead tr th:nth-child(3) { width: 12%; } /* 예배 */
+        thead tr th:nth-child(4) { width: 12%; } /* 양육 */
+        thead tr th:nth-child(5) { width: 12%; } /* 선교 */
+        thead tr th:nth-child(6) { width: 12%; } /* 사역 */
+        thead tr th:nth-child(7) { width: 18%; } /* 캠퍼스 (상대적으로 넓게) */
+        thead tr th:nth-child(8) { width: 12%; }  /* 투표 버튼 (상대적으로 좁게) */
+        /* 총합 100% */
 
         thead th {
             background-color: #333;
             color: white;
-            font-size: 0.85em; /* 헤더 폰트 크기 약간 증가 */
+            font-size: 0.95em; /* 헤더 폰트 크기 약간 확대 */
         }
 
         /* 티어별 배경색 (테이블 줄) */
@@ -82,34 +81,42 @@
         .draft-slots {
             display: flex;
             flex-direction: column;
-            gap: 1px;
-            padding: 1px 0;
+            gap: 2px;
+            padding: 2px 0;
         }
         
         .draft-slot {
-            height: 28px; /* 높이 약간 증가 */
+            height: 32px; /* 높이 약간 키움 */
             border: 1px solid #ccc;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.1em; /* 폰트 크기 증가 */
+            font-size: 1.3em; /* 우선순위 번호 폰트 크기 확대 */
             color: #333;
-            line-height: 1.1;
         }
         
         .draft-slot.blank {
-            color: #007bff;
+            cursor: pointer;
+            color: #007bff; /* 우선순위 번호 색상 */
         }
 
         .draft-slot.blank.filled {
             font-weight: normal;
-            font-size: 1em; /* 채워진 이름 폰트 크기 증가 */
+            font-size: 1.1em; /* 채워진 이름 폰트 크기 확대 */
+            cursor: default;
+            color: #333;
+            border: 1px solid #aaa;
         }
         
         /* 고정된 칸 스타일 */
         .draft-slot.fixed-slot {
+            background-color: #c0c0c0 !important;
+            color: #444;
             font-size: 1em;
+            cursor: default;
+            font-weight: normal;
+            border: 1px solid #aaa;
         }
 
         /* 칸 배경색 (기존 요청대로 유지) */
@@ -119,30 +126,95 @@
         .lightblue-bg-slot { background-color: #cceeff; }
         .lightgray-bg-slot { background-color: #eeeeee; }
 
+        /* 드래그 오버 효과 */
+        .draft-slot.blank.drag-over {
+            box-shadow: 0 0 10px 3px rgba(0, 123, 255, 0.6) inset;
+        }
         
         /* --- 버튼 스타일 --- */
         .priority-btn {
-            padding: 4px 7px;
-            font-size: 1.1em;
+            padding: 5px 10px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.2em;
+        }
+
+        .priority-btn:hover {
+            background-color: #0056b3;
         }
 
         /* 되돌리기 버튼 스타일 */
         #undo-button {
-            padding: 8px 15px;
-            font-size: 1em; /* 폰트 크기 증가 */
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            transition: background-color 0.3s;
         }
 
+        #undo-button:hover {
+            background-color: #c82333;
+        }
+
+        #undo-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
 
         /* --- 명단 스티커 스타일 --- */
+        #roster-area-sections {
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #fff;
+        }
+        
+        .roster-section {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
         .roster-section h3 {
             margin: 5px 0;
-            font-size: 1.1em; 
+            font-size: 1.1em;
+            border-left: 5px solid #007bff;
+            padding-left: 5px;
         }
 
         .name-sticker {
-            padding: 7px 10px; 
-            margin: 4px; 
-            font-size: 1em; /* 폰트 크기 증가 */
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 4px;
+            border: 1px solid #ffd54f;
+            border-radius: 5px;
+            cursor: grab;
+            font-weight: bold;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+
+        /* 스티커 배경색 */
+        .sticker-A { background-color: #ccffcc; }
+        .sticker-B { background-color: #ffffcc; }
+        .sticker-C { background-color: #ffdddd; }
+        .sticker-D { background-color: #cceeff; }
+        .sticker-E { background-color: #eeeeee; }
+
+        .name-sticker.dragging {
+            opacity: 0.7;
+        }
+
+        .name-sticker.hidden {
+            display: none;
         }
         /* --- CSS End --- */
     </style>
