@@ -2,584 +2,185 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>2026 대학청년부 분과 드래프트 (최종 보완 - 폰트 확대)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D 지구 원정대</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        /* --- CSS Start --- */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap');
         
-        /* 제목 폰트 크기 확대 */
-        h1 {
-            font-size: 2.5em; 
-            margin-bottom: 0.5em;
-        }
-
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-
-        .draft-area {
-            flex: 3; 
-            overflow-x: auto;
-        }
-
-        .roster-area {
-            flex: 1; 
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* --- 테이블 스타일 --- */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            table-layout: fixed; 
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 6px; /* 패딩 약간 확대 */
-            text-align: center;
-            vertical-align: middle; /* 텍스트 수직 중앙 정렬 */
-            /* ★ 수정됨: 테이블 기본 글자 크기 대폭 확대 */
-            font-size: 1.25em; 
-            word-break: keep-all; 
-        }
-
-        /* 컬럼 폭 조정 (총 8개 컬럼) */
-        thead tr th:nth-child(1) { width: 10%; } 
-        thead tr th:nth-child(2) { width: 12%; } 
-        thead tr th:nth-child(3) { width: 12%; } 
-        thead tr th:nth-child(4) { width: 12%; } 
-        thead tr th:nth-child(5) { width: 12%; } 
-        thead tr th:nth-child(6) { width: 12%; } 
-        thead tr th:nth-child(7) { width: 18%; } 
-        thead tr th:nth-child(8) { width: 12%; } 
-
-        thead th {
-            background-color: #333;
-            color: white;
-            /* ★ 수정됨: 헤더 글자 크기 확대 */
-            font-size: 1.1em; 
-            padding: 10px 0; /* 헤더 높이 확보 */
-        }
-
-        /* 티어별 배경색 */
-        .darkgray-bg { background-color: darkgray; }
-        .lightgray-bg-row { background-color: lightgray; }
-        .row-D { background-color: #e6e6e6; }
-        .row-E { background-color: #f2f2f2; }
-
-
-        /* --- 드래프트 칸 스타일 --- */
-        .draft-slots {
-            display: flex;
-            flex-direction: column;
-            gap: 4px; /* 간격 약간 확대 */
-            padding: 2px 0;
-        }
+        body { margin: 0; background: #00050a; color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; height: 100dvh; touch-action: none; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem 1.5rem; }
+        .interactive { pointer-events: auto; }
+        .title-font { font-family: 'Black Han Sans', sans-serif; }
+        .glass { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
         
-        .draft-slot {
-            /* ★ 수정됨: 칸 높이 대폭 확대 (글자가 커졌으므로) */
-            height: 45px; 
-            border: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            /* ★ 수정됨: 우선순위 번호 크기 대폭 확대 */
-            font-size: 1.6em; 
-            color: #333;
-        }
-        
-        .draft-slot.blank {
-            cursor: pointer;
-            color: #007bff; 
-        }
-
-        .draft-slot.blank.filled {
-            font-weight: normal;
-            /* ★ 수정됨: 채워진 이름 크기 확대 */
-            font-size: 1.35em; 
-            cursor: default;
-            color: #333;
-            border: 1px solid #aaa;
-        }
-        
-        /* 고정된 칸 스타일 */
-        .draft-slot.fixed-slot {
-            background-color: #c0c0c0 !important;
-            color: #444;
-            /* ★ 수정됨: 고정 칸 글자 크기 확대 */
-            font-size: 1.2em;
-            cursor: default;
-            font-weight: normal;
-            border: 1px solid #aaa;
-        }
-
-        /* 칸 배경색 */
-        .lightgreen-bg-slot { background-color: #ccffcc; }
-        .lightyellow-bg-slot { background-color: #ffffcc; }
-        .lightcoral-bg-slot { background-color: #ffdddd; }
-        .lightblue-bg-slot { background-color: #cceeff; }
-        .lightgray-bg-slot { background-color: #eeeeee; }
-
-        /* 드래그 오버 효과 */
-        .draft-slot.blank.drag-over {
-            box-shadow: 0 0 10px 3px rgba(0, 123, 255, 0.6) inset;
-        }
-        
-        /* --- 버튼 스타일 --- */
-        .priority-btn {
-            padding: 8px 15px; /* 버튼 크기 확대 */
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            /* ★ 수정됨: 투표 버튼 이모지 크기 확대 */
-            font-size: 1.5em; 
-        }
-
-        .priority-btn:hover {
-            background-color: #0056b3;
-        }
-
-        /* 되돌리기 버튼 스타일 */
-        #undo-button {
-            padding: 15px 20px; /* 버튼 넉넉하게 */
-            /* ★ 수정됨: 버튼 글자 확대 */
-            font-size: 1.2em; 
-            font-weight: bold;
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-            transition: background-color 0.3s;
-        }
-
-        #undo-button:hover {
-            background-color: #c82333;
-        }
-
-        #undo-button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-        }
-
-        /* --- 명단 스티커 스타일 --- */
-        #roster-area-sections {
-            border: 1px solid #ccc;
-            padding: 15px;
-            background-color: #fff;
-        }
-        
-        .roster-section {
-            margin-bottom: 15px;
-            padding: 5px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .roster-section h3 {
-            margin: 5px 0 10px 0;
-            /* ★ 수정됨: 명단 그룹 제목 확대 */
-            font-size: 1.3em; 
-            border-left: 6px solid #007bff;
-            padding-left: 8px;
-        }
-
-        .name-sticker {
-            display: inline-block;
-            padding: 10px 16px; /* 스티커 크기 확대 */
-            margin: 5px;
-            border: 1px solid #ffd54f;
-            border-radius: 5px;
-            cursor: grab;
-            font-weight: bold;
-            /* ★ 수정됨: 스티커 이름 글자 확대 */
-            font-size: 1.2em; 
-            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-            opacity: 1;
-            transition: opacity 0.3s;
-        }
-
-        /* 스티커 배경색 */
-        .sticker-A { background-color: #ccffcc; }
-        .sticker-B { background-color: #ffffcc; }
-        .sticker-C { background-color: #ffdddd; }
-        .sticker-D { background-color: #cceeff; }
-        .sticker-E { background-color: #eeeeee; }
-
-        .name-sticker.dragging {
-            opacity: 0.7;
-        }
-
-        .name-sticker.hidden {
-            display: none;
-        }
-        /* --- CSS End --- */
+        /* 말씀 모달 (고딕체) */
+        #bible-modal { font-family: 'Pretendard', sans-serif; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>2026 대학청년부 분과 드래프트</h1>
-    </header>
+    <div id="canvas-container"></div>
 
-    <div class="container">
-        <div class="draft-area">
-            <table>
-                <thead>
-                    <tr>
-                        <th>연차</th>
-                        <th>기획(최대흥)</th>
-                        <th>예배(김태광)</th>
-                        <th>양육(신경훈)</th>
-                        <th>선교(조은광)</th>
-                        <th>사역(전진)</th>
-                        <th>캠퍼스(오현교)</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr data-tier="B" class="lightgray-bg-row">
-                        <td>전임 1~2년차</td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot fixed-slot" data-col="기획" data-tier="B" id="fixed-recruit-B">신입</div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightyellow-bg-slot" data-col="예배" data-tier="B" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightyellow-bg-slot" data-col="양육" data-tier="B" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightyellow-bg-slot" data-col="양육" data-tier="B" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightyellow-bg-slot" data-col="선교" data-tier="B" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightyellow-bg-slot" data-col="사역" data-tier="B" data-slot-order="1"></div></div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="B">🗳️</button></td>
-                    </tr>
-                    <tr data-tier="A" class="darkgray-bg">
-                        <td>전임 3년차~</td>
-                        <td></td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightgreen-bg-slot" data-col="양육" data-tier="A" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightgreen-bg-slot" data-col="선교" data-tier="A" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightgreen-bg-slot" data-col="선교" data-tier="A" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightgreen-bg-slot" data-col="사역" data-tier="A" data-slot-order="1"></div></div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="A">🗳️</button></td>
-                    </tr>
-                    <tr data-tier="E" class="row-E">
-                        <td>파트 1년차</td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightgray-bg-slot" data-col="예배" data-tier="E" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightgray-bg-slot" data-col="예배" data-tier="E" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightgray-bg-slot" data-col="선교" data-tier="E" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightgray-bg-slot" data-col="사역" data-tier="E" data-slot-order="1"></div></div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="E">🗳️</button></td>
-                    </tr>
-                    <tr data-tier="D" class="row-D">
-                        <td>파트 2년차</td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="예배" data-tier="D" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="예배" data-tier="D" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="양육" data-tier="D" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="양육" data-tier="D" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightblue-bg-slot" data-col="선교" data-tier="D" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots">
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="사역" data-tier="D" data-slot-order="1"></div>
-                                <div class="draft-slot blank lightblue-bg-slot" data-col="사역" data-tier="D" data-slot-order="2"></div>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="D">🗳️</button></td>
-                    </tr>
-                    <tr data-tier="C" class="darkgray-bg">
-                        <td>파트 3년차</td>
-                        <td></td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="예배" data-tier="C" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="양육" data-tier="C" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="선교" data-tier="C" data-slot-order="1"></div></div>
-                        </td>
-                        <td>
-                            <div class="draft-slots"><div class="draft-slot blank lightcoral-bg-slot" data-col="사역" data-tier="C" data-slot-order="1"></div></div>
-                        </td>
-                        <td></td>
-                        <td><button class="priority-btn" data-tier="C">🗳️</button></td>
-                    </tr>
-                </tbody>
-            </table>
+    <div class="ui-overlay">
+        <div class="text-center">
+            <p class="text-yellow-400 text-xs font-bold tracking-[0.3em] mb-1">FAITH EXPEDITION</p>
+            <h1 class="title-font text-5xl md:text-7xl">
+                <span id="dist-text">0.00</span><span class="text-xl text-slate-400 ml-1 font-sans">km</span>
+            </h1>
         </div>
 
-        <div class="roster-area">
-            <button id="undo-button" disabled>⏪ 한 단계 되돌리기</button>
-            
-            <div id="roster-area-sections">
-                <h2>드래프트 명단</h2>
-                </div>
+        <div class="w-full max-w-md mx-auto space-y-4 text-center">
+            <button onclick="toggleModal('record', true)" class="interactive w-full py-5 bg-yellow-400 text-black rounded-2xl font-black text-xl shadow-[0_0_30px_rgba(250,204,21,0.4)] active:scale-95 transition-transform">
+                원정 기록하기
+            </button>
+        </div>
+    </div>
+
+    <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+        <div class="interactive glass w-full max-w-sm p-8 rounded-[35px] text-white">
+            <h3 class="title-font text-2xl mb-8 text-yellow-400">활동 기록 추가</h3>
+            <div class="space-y-6">
+                <input type="number" id="inputKm" step="0.1" placeholder="이동 거리 (KM)" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-2xl font-bold">
+                <input type="number" id="inputSteps" placeholder="오늘 걸음 수" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-2xl font-bold">
+            </div>
+            <div class="flex gap-4 mt-10">
+                <button onclick="toggleModal('record', false)" class="flex-1 py-4 font-bold text-slate-400">취소</button>
+                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black shadow-lg">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="bible-modal" onclick="closeBible()" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-10 bg-black/60 backdrop-blur-lg cursor-pointer">
+        <div class="max-w-lg text-center pointer-events-none">
+            <div class="w-12 h-1 bg-yellow-400 mx-auto mb-8 opacity-50"></div>
+            <p id="bible-text" class="text-2xl md:text-4xl font-black leading-tight text-white mb-6 break-keep"></p>
+            <p id="bible-ref" class="text-yellow-400 font-bold tracking-widest text-base uppercase"></p>
+            <p class="mt-12 text-white/30 text-xs font-bold tracking-widest uppercase">화면을 터치하면 돌아갑니다</p>
         </div>
     </div>
 
     <script>
-        /* --- JavaScript Start --- */
-        document.addEventListener('DOMContentLoaded', () => {
-            // 1. 명단 데이터 및 상태 관리
-            const rosterData = {
-                'B': { name: '전임 1~2년차', list: ['김현', '길한솔', '이승호', '최강호', '홍근영'], count: 5, colorClass: 'sticker-B' },
-                'A': { name: '전임 3년차~', list: ['박성원', '박성훈', '이진기', '최재윤'], count: 4, colorClass: 'sticker-A' },
-                'E': { name: '파트 1년차', list: ['이나단', '신지수', '김영범', '신입'], count: 4, colorClass: 'sticker-E' },
-                'D': { name: '파트 2년차', list: ['권혁성', '박시온', '박지윤', '배윤주', '오진우', '이은찬', '조영찬'], count: 7, colorClass: 'sticker-D' },
-                'C': { name: '파트 3년차', list: ['구길모', '이예찬', '장건우', '정찬중'], count: 4, colorClass: 'sticker-C' }
-            };
+        const verses = [
+            { text: "이기기를 다투는 자마다 모든 일에 절제하나니 우리는 썩지 아니할 관을 얻고자 하노라", ref: "고린도전서 9:25" },
+            { text: "내가 선한 싸움을 싸우고 나의 달려갈 길을 마치고 믿음을 지켰으니", ref: "디모데후서 4:7" },
+            { text: "푯대를 향하여 그리스도 예수 안에서 부름의 상을 위하여 달려가노라", ref: "빌립보서 3:14" },
+            { text: "인내로써 우리 앞에 당한 경주를 하며 믿음의 주요 온전하게 하시는 이를 바라보자", ref: "히브리서 12:1-2" },
+            { text: "여호와를 앙망하는 자는 새 힘을 얻으리니 달음박질하여도 곤비하지 아니하겠고", ref: "이사야 40:31" }
+        ];
 
-            const sectionsContainer = document.getElementById('roster-area-sections');
-            const priorityButtons = document.querySelectorAll('.priority-btn');
-            const draftBlanks = document.querySelectorAll('.draft-slot.blank'); 
-            const undoButton = document.getElementById('undo-button'); 
+        let scene, camera, renderer, globe, marker, controls, pathLine, sprite;
+        let totalKm = parseFloat(localStorage.getItem('earth3D_km')) || 0;
+        const totalTarget = 40000;
+        const GLOBE_RADIUS = 2;
 
-            // 상태 저장 스택: { slotElement: DOM, name: string, originalText: string } 형태로 저장
-            const historyStack = [];
-            
-            // 빈칸 배열 (각 티어별 순서대로)
-            const tierBlanks = {
-                'B': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="B"]')), 
-                'A': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="A"]')), 
-                'E': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="E"]')), 
-                'D': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="D"]')), 
-                'C': Array.from(document.querySelectorAll('.draft-slot.blank[data-tier="C"]'))
-            };
-            
-            // Fisher-Yates 셔플 함수
-            function shuffle(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+            sunLight.position.set(5, 3, 5);
+            scene.add(sunLight);
+
+            const textureLoader = new THREE.TextureLoader();
+            const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+            globe = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64), new THREE.MeshPhongMaterial({ map: earthTexture }));
+            scene.add(globe);
+
+            // 마커
+            marker = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 16), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+            sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
+                color: 0xfacc15, transparent: true, blending: THREE.AdditiveBlending
+            }));
+            sprite.scale.set(0.4, 0.4, 1);
+            marker.add(sprite);
+            scene.add(marker);
+
+            // 경로 선
+            pathLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.5 }));
+            scene.add(pathLine);
+
+            camera.position.z = 5;
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.enableZoom = false;
+
+            updateVisuals(totalKm);
+            animate();
+        }
+
+        function updateVisuals(km) {
+            const ratio = Math.min(km / totalTarget, 1);
+            const lon = (ratio * 360) * (Math.PI / 180);
+            const radius = GLOBE_RADIUS + 0.05;
+
+            marker.position.set(radius * Math.cos(lon), 0, radius * Math.sin(lon));
+
+            const points = [];
+            for (let i = 0; i <= 100; i++) {
+                const pRatio = (i / 100) * ratio;
+                const pLon = (pRatio * 360) * (Math.PI / 180);
+                points.push(new THREE.Vector3(radius * Math.cos(pLon), 0, radius * Math.sin(pLon)));
             }
+            pathLine.geometry.setFromPoints(points);
+            document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
 
-            // 2. 명단 스티커 생성
-            function createStickers() {
-                sectionsContainer.innerHTML = '<h2>드래프트 명단</h2>';
-                
-                Object.keys(rosterData).forEach(tier => {
-                    const data = rosterData[tier];
-                    
-                    const section = document.createElement('div');
-                    section.className = 'roster-section';
-                    
-                    const title = document.createElement('h3');
-                    title.textContent = data.name;
-                    section.appendChild(title);
-                    
-                    data.list.forEach(name => {
-                        const sticker = document.createElement('div');
-                        sticker.className = `name-sticker ${data.colorClass}`;
-                        sticker.draggable = true;
-                        sticker.textContent = name;
-                        sticker.id = `sticker-${name}`;
-                        sticker.setAttribute('data-tier', tier);
-                        section.appendChild(sticker);
-                    });
-                    sectionsContainer.appendChild(section);
-                });
-            }
+        function submitRecord() {
+            const addedKm = (parseFloat(document.getElementById('inputKm').value) || 0) + ((parseInt(document.getElementById('inputSteps').value) || 0) * 0.0007);
+            if (addedKm <= 0) { toggleModal('record', false); return; }
 
-            // 3. 우선순위 부여 로직 (순차적 번호 부여 + 랜덤 칸 배열 + 0.7초 간격)
-            function setPriorities(tier) {
-                const blanks = tierBlanks[tier].filter(b => !b.classList.contains('filled'));
-                if (blanks.length === 0) return;
+            const startKm = totalKm;
+            totalKm += addedKm;
+            localStorage.setItem('earth3D_km', totalKm);
+            toggleModal('record', false);
 
-                // 1. 슬롯을 1순위와 2순위로 분리
-                let round1Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '1');
-                let round2Slots = blanks.filter(b => b.getAttribute('data-slot-order') === '2');
-                
-                // 2. 각 라운드 내에서 무작위로 섞기 (랜덤 칸 배열)
-                round1Slots = shuffle(round1Slots);
-                round2Slots = shuffle(round2Slots);
-
-                // 3. 최종 할당 순서 정의 (1순위 칸 먼저, 2순위 칸 나중에)
-                const finalAssignmentOrder = [...round1Slots, ...round2Slots];
-                
-                // 4. 순차적으로 0.7초 간격으로 1부터 번호 부여
-                finalAssignmentOrder.forEach((slot, index) => {
-                    const priorityNumber = index + 1; // 1, 2, 3, 4, ... 순차적 번호
-                    const delayTime = index * 700; // 0.7초 간격
-
-                    // 딜레이 후 번호 부여
-                    setTimeout(() => {
-                        slot.textContent = priorityNumber;
-                    }, delayTime);
-                });
-            }
-
-            // 4. 되돌리기 버튼 상태 업데이트
-            function updateUndoButton() {
-                undoButton.disabled = historyStack.length === 0;
-            }
-
-            // 5. 투표 버튼 이벤트 리스너
-            priorityButtons.forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const tier = e.currentTarget.getAttribute('data-tier');
-                    setPriorities(tier);
-                });
-            });
-
-            // 6. 드래그 앤 드롭 이벤트 처리
-            let draggedSticker = null;
-
-            sectionsContainer.addEventListener('dragstart', (e) => {
-                if (e.target.classList.contains('name-sticker')) {
-                    draggedSticker = e.target;
-                    e.dataTransfer.setData('text/plain', draggedSticker.textContent);
-                    e.dataTransfer.setData('tier', draggedSticker.getAttribute('data-tier'));
-                    setTimeout(() => {
-                        draggedSticker.classList.add('dragging');
-                    }, 0);
+            // 1. 빛의 이동 애니메이션
+            gsap.to({ val: startKm }, {
+                val: totalKm,
+                duration: 2.5,
+                ease: "power2.inOut",
+                onUpdate: function() { updateVisuals(this.targets()[0].val); },
+                onComplete: () => {
+                    // 2. 도착 후 깜빡임 강하게 연출
+                    gsap.fromTo(sprite.scale, {x:0.4, y:0.4}, {x:1.2, y:1.2, duration: 0.2, yoyo:true, repeat:3});
+                    // 3. 말씀 표시
+                    setTimeout(showBibleVerse, 800);
                 }
             });
+        }
 
-            sectionsContainer.addEventListener('dragend', () => {
-                if (draggedSticker) {
-                    draggedSticker.classList.remove('dragging');
-                    draggedSticker = null;
-                }
-            });
+        function showBibleVerse() {
+            const v = verses[Math.floor(Math.random() * verses.length)];
+            document.getElementById('bible-text').innerText = v.text;
+            document.getElementById('bible-ref').innerText = v.ref;
+            const modal = document.getElementById('bible-modal');
+            modal.classList.remove('hidden');
+            gsap.fromTo(modal, {opacity: 0}, {opacity: 1, duration: 0.5});
+        }
 
-            draftBlanks.forEach(blank => {
-                blank.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    
-                    const isRanked = !isNaN(parseInt(blank.textContent));
-                    const dragTier = e.dataTransfer.getData('tier');
-                    const slotTier = blank.getAttribute('data-tier');
-                    const isTierMatch = dragTier === slotTier;
-                    
-                    // 순위 번호가 있고, 아직 채워지지 않았으며, 티어가 일치할 때만 드래그 오버 허용
-                    if (!blank.classList.contains('filled') && isRanked && isTierMatch) {
-                        blank.classList.add('drag-over');
-                    }
-                });
+        function closeBible() {
+            gsap.to(document.getElementById('bible-modal'), {opacity: 0, duration: 0.3, onComplete: () => {
+                document.getElementById('bible-modal').classList.add('hidden');
+            }});
+        }
 
-                blank.addEventListener('dragleave', () => {
-                    blank.classList.remove('drag-over');
-                });
+        function toggleModal(id, show) { document.getElementById(id + '-modal').classList.toggle('hidden', !show); }
+        function animate() { requestAnimationFrame(animate); globe.rotation.y += 0.0005; controls.update(); renderer.render(scene, camera); }
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 
-                blank.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    blank.classList.remove('drag-over');
-                    
-                    const isRanked = !isNaN(parseInt(blank.textContent));
-                    const isTierMatch = draggedSticker && draggedSticker.getAttribute('data-tier') === blank.getAttribute('data-tier');
-
-                    if (draggedSticker && !blank.classList.contains('filled') && isRanked && isTierMatch) {
-                        const name = draggedSticker.textContent;
-                        
-                        // 1. 상태 저장 (Undo 기능을 위해: 현재 텍스트(순위 번호) 저장)
-                        historyStack.push({
-                            slotElement: blank,
-                            name: name,
-                            originalText: blank.textContent // 순위 번호 저장
-                        });
-                        
-                        // 2. 칸 채우기 (이름으로 덮어쓰기)
-                        blank.textContent = name;
-                        blank.classList.add('filled');
-                        
-                        // 3. 스티커 숨기기
-                        draggedSticker.classList.add('hidden');
-
-                        updateUndoButton();
-                    }
-                });
-            });
-
-            // 7. 한 단계 되돌리기 기능 구현
-            undoButton.addEventListener('click', () => {
-                if (historyStack.length > 0) {
-                    const lastAction = historyStack.pop();
-                    const slot = lastAction.slotElement;
-                    const name = lastAction.name;
-                    const originalText = lastAction.originalText;
-
-                    // 1. 슬롯 복구: 채워진 상태 해제 및 순위 번호 복구 (다시 드래그 가능 상태)
-                    slot.classList.remove('filled');
-                    slot.textContent = originalText; // 순위 번호 복구
-
-                    // 2. 스티커 복구: 숨김 상태 해제
-                    const sticker = document.getElementById(`sticker-${name}`);
-                    if (sticker) {
-                        sticker.classList.remove('hidden');
-                    }
-                    
-                    updateUndoButton();
-                }
-            });
-
-            // 초기화 및 실행
-            createStickers();
-            updateUndoButton(); // 초기 버튼 상태 설정
-        });
-        /* --- JavaScript End --- */
+        init3D();
     </script>
 </body>
 </html>
