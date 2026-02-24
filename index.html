@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>걸어서 지구 한바퀴 - 통합 대시보드</title>
+    <title>걸어서 지구 한바퀴 - 라이브 챌린지</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -16,110 +16,116 @@
         .interactive { pointer-events: auto; }
         .title-font { font-family: 'Black Han Sans', sans-serif; }
         .glass { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15); }
-        .text-neon { text-shadow: 0 0 15px rgba(250, 204, 21, 0.5); }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body>
 
     <div id="canvas-container"></div>
 
-    <div id="personal-stat-card" class="fixed top-6 left-6 z-20 hidden transition-all duration-500">
+    <div id="personal-stat-card" class="fixed top-6 left-6 z-20 opacity-0 transform -translate-x-10 transition-all duration-500">
         <div class="glass p-5 rounded-3xl border-l-4 border-l-yellow-400">
-            <p id="user-display-name" class="text-yellow-400 font-black text-xs tracking-widest mb-2">MY PROGRESS</p>
+            <p id="user-display-name" class="text-yellow-400 font-black text-[10px] tracking-widest mb-2 uppercase">My Challenge</p>
             <div class="space-y-1">
                 <div class="flex items-baseline gap-2">
                     <span id="my-dist-text" class="title-font text-2xl">0.00</span>
                     <span class="text-[10px] text-slate-400">/ <span id="my-target-text">0</span> km</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <div class="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div id="my-progress-bar" class="h-full bg-yellow-400 transition-all duration-500" style="width: 0%"></div>
+                    <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div id="my-progress-bar" class="h-full bg-yellow-400 transition-all duration-700" style="width: 0%"></div>
                     </div>
-                    <span id="my-percent-text" class="text-sm font-black text-yellow-400">0%</span>
+                    <span id="my-percent-text" class="text-xs font-black text-yellow-400 italic">0%</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="fixed top-6 right-6 z-20 text-right interactive">
-        <p class="text-[10px] text-yellow-400/70 font-bold tracking-[0.2em] uppercase mb-1">Target: 2026.06.19</p>
-        <div id="dday-text" class="title-font text-3xl text-white drop-shadow-2xl">D-Day</div>
+    <div class="fixed top-6 right-6 z-20 text-right">
+        <div class="glass p-4 rounded-2xl">
+            <p class="text-[9px] text-yellow-400/70 font-bold tracking-widest mb-1">TOTAL GOAL</p>
+            <div id="global-target-display" class="title-font text-xl text-white italic">40,075 km</div>
+        </div>
     </div>
 
     <div class="fixed bottom-6 left-6 z-30 interactive">
-        <button id="test-btn" onclick="runLiveSimulation()" class="glass px-5 py-2.5 rounded-xl text-[10px] font-black text-white/50 border border-white/10 hover:border-yellow-400/50 hover:text-yellow-400 transition-all">
-            🔥 1,000명 동시입력 시뮬레이션
+        <button id="test-btn" onclick="runMegaSimulation()" class="glass px-5 py-2.5 rounded-xl text-[10px] font-black text-white/40 border border-white/5 hover:text-yellow-400 hover:border-yellow-400/50 transition-all">
+            🔥 1000명 데이터 시뮬레이션
         </button>
-        <p id="test-status" class="text-[10px] text-yellow-400 mt-2 ml-1 hidden animate-pulse">데이터 유입 중... <span id="test-count">0</span>/1000</p>
+        <div id="test-status" class="hidden mt-2 p-2 bg-yellow-400 rounded-lg text-black font-black text-[9px] animate-bounce">
+            SIMULATING: <span id="test-count">0</span> / 1,000
+        </div>
     </div>
 
     <div class="ui-overlay">
-        <div class="text-center pt-12">
-            <p class="text-yellow-400 text-sm font-bold tracking-[0.4em] mb-3 title-font drop-shadow-lg">지구 한바퀴 누적 현황</p>
-            <div class="flex flex-col items-center justify-center">
-                <div class="flex items-baseline gap-3">
-                    <h1 id="dist-text" class="title-font text-7xl md:text-9xl tracking-tighter text-neon">0.00</h1>
-                    <span class="text-2xl text-slate-500 font-sans italic font-bold">km</span>
+        <div class="text-center pt-10">
+            <p class="text-yellow-400 text-xs font-bold tracking-[0.4em] mb-2 title-font">TOGETHER AROUND THE WORLD</p>
+            <div class="flex flex-col items-center">
+                <div class="flex items-baseline">
+                    <h1 id="dist-text" class="title-font text-7xl md:text-9xl tracking-tighter">0.00</h1>
+                    <span class="text-xl text-slate-500 font-bold ml-2 italic">km</span>
                 </div>
-                <div class="mt-4 flex flex-col items-center">
-                    <div id="percent-text" class="text-4xl md:text-5xl font-black text-white leading-none">0.00%</div>
-                    <div class="w-64 h-2 bg-white/10 rounded-full mt-4 overflow-hidden">
-                        <div id="global-progress-bar" class="h-full bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.8)]" style="width: 0%"></div>
+                <div class="mt-4">
+                    <div id="percent-text" class="text-4xl font-black text-white">0.00%</div>
+                    <div class="w-48 h-1 bg-white/10 rounded-full mt-3 mx-auto overflow-hidden">
+                        <div id="global-progress-bar" class="h-full bg-yellow-400 shadow-[0_0_10px_#fbbf24]" style="width: 0%"></div>
                     </div>
-                    <p class="text-[10px] text-slate-400 font-bold mt-3 uppercase tracking-widest">Global Target: 40,075 km</p>
                 </div>
             </div>
         </div>
 
-        <div class="w-full max-w-sm mx-auto pb-8">
-            <button onclick="startRecordFlow()" class="interactive w-full py-6 bg-white text-black rounded-3xl font-black text-2xl shadow-[0_20px_40px_rgba(255,255,255,0.2)] active:scale-95 transition-transform">
+        <div class="w-full max-w-xs mx-auto pb-10">
+            <button onclick="openLoginModal()" class="interactive w-full py-5 bg-white text-black rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-transform">
                 기록 추가하기
             </button>
         </div>
     </div>
 
-    <div id="modal-backdrop" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl transition-all">
+    <div id="modal-backdrop" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
         
-        <div id="login-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden">
+        <div id="login-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center">
             <h3 class="title-font text-3xl mb-8 text-yellow-400">본인 확인</h3>
-            <input type="text" id="loginName" placeholder="이름" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 mb-4 outline-none focus:border-yellow-400 font-bold text-center">
-            <input type="tel" id="loginPhone" maxlength="4" placeholder="휴대폰 뒷 4자리" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 mb-8 outline-none focus:border-yellow-400 font-bold text-center">
-            <div class="flex gap-4">
+            <div class="space-y-4">
+                <input type="text" id="loginName" placeholder="이름" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-yellow-400 font-bold text-center">
+                <input type="number" id="loginPhone" placeholder="휴대폰 뒷 4자리" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-yellow-400 font-bold text-center">
+            </div>
+            <div class="flex gap-4 mt-8">
                 <button onclick="closeModals()" class="flex-1 py-4 text-slate-400 font-bold">취소</button>
-                <button onclick="handleLogin()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">확인</button>
+                <button onclick="processLogin()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">확인</button>
             </div>
         </div>
 
         <div id="target-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden">
             <h3 class="title-font text-2xl mb-2 text-yellow-400">목표 설정</h3>
-            <p class="text-slate-400 text-sm mb-8 italic">이번 여정에서 몇 km를 걷고 싶으신가요?</p>
-            <input type="number" id="targetInput" placeholder="예: 100" class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 outline-none focus:border-yellow-400 text-5xl font-black text-center text-yellow-400">
-            <button onclick="handleTargetSetting()" class="w-full py-4 bg-yellow-400 text-black rounded-2xl font-black">여정 시작하기</button>
+            <p class="text-slate-400 text-xs mb-8 uppercase tracking-widest font-bold">Set your target distance</p>
+            <input type="number" id="targetInput" placeholder="0" class="w-full bg-transparent border-b-2 border-yellow-400 mb-10 outline-none text-5xl font-black text-center text-yellow-400 p-2">
+            <button onclick="processTargetSetting()" class="w-full py-5 bg-yellow-400 text-black rounded-2xl font-black text-lg">도전 시작하기</button>
         </div>
 
         <div id="record-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden">
-            <h3 id="modal-user-title" class="title-font text-3xl mb-1 text-yellow-400">사용자</h3>
-            <p class="text-slate-400 text-[10px] mb-8 uppercase tracking-widest font-bold">Add your distance</p>
+            <h3 id="modal-user-title" class="title-font text-3xl mb-1 text-yellow-400">사용자님</h3>
+            <p class="text-slate-500 text-[10px] mb-8 uppercase tracking-widest font-bold italic">How far did you walk today?</p>
             <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-transparent border-b-2 border-yellow-400 mb-10 outline-none text-6xl font-black text-center text-yellow-400 p-2">
             <div class="flex gap-4">
                 <button onclick="closeModals()" class="flex-1 py-4 text-slate-400 font-bold">취소</button>
-                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">저장</button>
+                <button onclick="processSubmitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">저장</button>
             </div>
         </div>
     </div>
 
     <script>
         let scene, camera, renderer, globe, marker, controls, pathTube;
-        const GLOBAL_TARGET_KM = 40075; 
+        const EARTH_CIRCUMFERENCE = 40075; 
         const GLOBE_RADIUS = 2;
         const PATH_RADIUS = 2.18;
         
-        // 데이터 구조: 유저별 객체와 전체 합산 데이터
-        let appData = JSON.parse(localStorage.getItem('earthData_V4')) || { 
+        // 데이터 구조 보강: 전체 누적 데이터 + 유저별 개별 데이터
+        let appData = JSON.parse(localStorage.getItem('earthChallenge_v5')) || { 
             users: {}, 
-            totalGlobalKm: 0 
+            totalKm: 0,
+            totalGoal: 40075 // 기본은 지구 둘레지만 시뮬레이션 시 증가함
         };
-        let currentUser = null;
+        let currentUserId = null;
 
         function init3D() {
             scene = new THREE.Scene();
@@ -127,13 +133,9 @@
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.toneMapping = THREE.ReinhardToneMapping;
-            renderer.toneMappingExposure = 1.5;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
             const textureLoader = new THREE.TextureLoader();
-            scene.background = new THREE.Color(0x00050a);
-
             const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
             scene.add(ambientLight);
             const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -143,9 +145,7 @@
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             globe = new THREE.Mesh(
                 new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64), 
-                new THREE.MeshStandardMaterial({ 
-                    map: earthTexture, roughness: 0.3, metalness: 0.6, emissive: 0x112244, emissiveIntensity: 0.5
-                })
+                new THREE.MeshStandardMaterial({ map: earthTexture, roughness: 0.4, metalness: 0.4 })
             );
             scene.add(globe);
 
@@ -154,7 +154,6 @@
                 map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
                 color: 0xffcc00, transparent: true, blending: THREE.AdditiveBlending
             }));
-            glow.scale.set(1.2, 1.2, 1);
             marker.add(glow);
             scene.add(marker);
 
@@ -163,33 +162,39 @@
             controls.enableDamping = true;
             controls.enableZoom = false;
 
-            updateDDay();
-            updateVisuals(appData.totalGlobalKm);
+            updateVisuals();
             animate();
         }
 
-        function updateVisuals(km) {
-            // 1. 전체 데이터 업데이트
-            const globalRatio = Math.min(km / GLOBAL_TARGET_KM, 1);
-            document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        // --- 핵심 UI 업데이트 로직 ---
+        function updateVisuals() {
+            const globalRatio = Math.min(appData.totalKm / appData.totalGoal, 1);
+            
+            // 1. 전체 디스플레이
+            document.getElementById('dist-text').innerText = appData.totalKm.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
             document.getElementById('percent-text').innerText = (globalRatio * 100).toFixed(2) + "%";
             document.getElementById('global-progress-bar').style.width = (globalRatio * 100) + "%";
-            
-            // 2. 개인 데이터 업데이트 (로그인 중일 때만)
-            if (currentUser) {
-                const myRatio = Math.min(currentUser.totalKm / currentUser.targetKm, 1);
-                document.getElementById('my-dist-text').innerText = currentUser.totalKm.toLocaleString(undefined, {minimumFractionDigits: 2});
-                document.getElementById('my-target-text').innerText = currentUser.targetKm.toLocaleString();
+            document.getElementById('global-target-display').innerText = appData.totalGoal.toLocaleString() + " km";
+
+            // 2. 개인 디스플레이
+            if (currentUserId && appData.users[currentUserId]) {
+                const u = appData.users[currentUserId];
+                const myRatio = Math.min(u.dist / u.target, 1);
+                document.getElementById('my-dist-text').innerText = u.dist.toLocaleString(undefined, {minimumFractionDigits: 1});
+                document.getElementById('my-target-text').innerText = u.target.toLocaleString();
                 document.getElementById('my-percent-text').innerText = Math.floor(myRatio * 100) + "%";
                 document.getElementById('my-progress-bar').style.width = (myRatio * 100) + "%";
-                document.getElementById('personal-stat-card').classList.remove('hidden');
+                
+                const card = document.getElementById('personal-stat-card');
+                card.style.opacity = "1";
+                card.style.transform = "translateX(0)";
             }
 
-            // 3. 3D 궤적 업데이트
+            // 3. 3D 궤적
             if (pathTube) { scene.remove(pathTube); pathTube.geometry.dispose(); pathTube.material.dispose(); }
             if (globalRatio > 0) {
                 const points = [];
-                const segments = Math.max(2, Math.floor(globalRatio * 300));
+                const segments = Math.max(2, Math.floor(globalRatio * 400));
                 for (let i = 0; i <= segments; i++) {
                     const pRatio = (i / segments) * globalRatio;
                     const angle = Math.PI - (pRatio * Math.PI * 2);
@@ -197,107 +202,113 @@
                 }
                 const pathCurve = new THREE.CatmullRomCurve3(points);
                 const tubeGeo = new THREE.TubeGeometry(pathCurve, 128, 0.025, 8, false);
-                const tubeMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 3 });
+                const tubeMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 2 });
                 pathTube = new THREE.Mesh(tubeGeo, tubeMat);
                 scene.add(pathTube);
                 marker.position.copy(points[points.length - 1]);
             }
         }
 
-        // --- 시뮬레이션 ---
-        function runLiveSimulation() {
-            const btn = document.getElementById('test-btn');
-            const status = document.getElementById('test-status');
-            const countDisplay = document.getElementById('test-count');
-            btn.disabled = true;
-            status.classList.remove('hidden');
-
-            let count = 0;
-            const timer = setInterval(() => {
-                count += 5;
-                countDisplay.innerText = count;
-                appData.totalGlobalKm += (Math.random() * 20 + 5);
-                updateVisuals(appData.totalGlobalKm);
-                if (count >= 1000) {
-                    clearInterval(timer);
-                    btn.disabled = false;
-                    status.classList.add('hidden');
-                    localStorage.setItem('earthData_V4', JSON.stringify(appData));
-                }
-            }, 30);
-        }
-
-        // --- 유저 로직 ---
-        function startRecordFlow() {
+        // --- 모달 제어 로직 ---
+        function openLoginModal() {
             document.getElementById('modal-backdrop').classList.remove('hidden');
             document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('target-modal').classList.add('hidden');
+            document.getElementById('record-modal').classList.add('hidden');
         }
 
-        function handleLogin() {
+        function processLogin() {
             const name = document.getElementById('loginName').value.trim();
             const phone = document.getElementById('loginPhone').value.trim();
-            if(!name || phone.length < 4) return alert("이름과 번호 4자리를 입력해주세요.");
+            if(!name || phone.length < 4) return alert("정보를 정확히 입력해주세요.");
+
+            currentUserId = `${name}_${phone}`;
             
-            const userKey = `${name}_${phone}`;
-            if (appData.users[userKey]) {
-                currentUser = appData.users[userKey];
+            // 기존 유저인지 확인
+            document.getElementById('login-modal').classList.add('hidden');
+            if (appData.users[currentUserId]) {
                 showRecordModal();
             } else {
-                currentUser = { name, phone, totalKm: 0, targetKm: 0 };
-                showTargetModal();
+                document.getElementById('target-modal').classList.remove('hidden');
             }
         }
 
-        function showTargetModal() {
-            document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('target-modal').classList.remove('hidden');
-        }
-
-        function handleTargetSetting() {
+        function processTargetSetting() {
             const target = parseFloat(document.getElementById('targetInput').value);
             if (!target || target <= 0) return alert("목표 거리를 입력해주세요.");
+
+            appData.users[currentUserId] = {
+                name: document.getElementById('loginName').value,
+                target: target,
+                dist: 0
+            };
             
-            currentUser.targetKm = target;
-            const userKey = `${currentUser.name}_${currentUser.phone}`;
-            appData.users[userKey] = currentUser;
+            document.getElementById('target-modal').classList.add('hidden');
             showRecordModal();
         }
 
         function showRecordModal() {
-            document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('target-modal').classList.add('hidden');
-            document.getElementById('modal-user-title').innerText = currentUser.name + "님";
+            document.getElementById('modal-user-title').innerText = appData.users[currentUserId].name + "님";
             document.getElementById('record-modal').classList.remove('hidden');
-            updateVisuals(appData.totalGlobalKm);
+            updateVisuals(); // 로그인 시 개인 카드 활성화
         }
 
-        function submitRecord() {
+        function processSubmitRecord() {
             const val = parseFloat(document.getElementById('inputKm').value);
             if(!val || val <= 0) return alert("거리를 입력해주세요.");
 
-            const userKey = `${currentUser.name}_${currentUser.phone}`;
-            currentUser.totalKm += val;
-            appData.totalGlobalKm += val;
-            appData.users[userKey] = currentUser;
+            appData.users[currentUserId].dist += val;
+            appData.totalKm += val;
             
-            localStorage.setItem('earthData_V4', JSON.stringify(appData));
+            saveAndClose();
+        }
+
+        function saveAndClose() {
+            localStorage.setItem('earthChallenge_v5', JSON.stringify(appData));
             closeModals();
-            updateVisuals(appData.totalGlobalKm);
+            updateVisuals();
         }
 
         function closeModals() {
             document.getElementById('modal-backdrop').classList.add('hidden');
-            document.querySelectorAll('#modal-backdrop > div').forEach(el => el.classList.add('hidden'));
         }
 
-        function updateDDay() {
-            const days = Math.ceil((new Date(2026, 5, 19) - new Date()) / 86400000);
-            document.getElementById('dday-text').innerText = days > 0 ? `D-${days}` : (days === 0 ? "D-Day" : "End");
+        // --- 1000명 시뮬레이션 로직 (요구사항 반영) ---
+        function runMegaSimulation() {
+            const btn = document.getElementById('test-btn');
+            const status = document.getElementById('test-status');
+            const countDisplay = document.getElementById('test-count');
+            
+            btn.disabled = true;
+            status.classList.remove('hidden');
+            
+            let count = 0;
+            const timer = setInterval(() => {
+                // 한 번에 5명씩 처리 (속도감)
+                for(let i=0; i<5; i++) {
+                    count++;
+                    const simTarget = 50 + Math.random() * 50; // 인당 50~100km
+                    const simDist = 1 + Math.random() * 24;    // 인당 1~25km
+                    
+                    appData.totalGoal += simTarget;
+                    appData.totalKm += simDist;
+                }
+
+                countDisplay.innerText = count;
+                updateVisuals();
+
+                if (count >= 1000) {
+                    clearInterval(timer);
+                    btn.disabled = false;
+                    status.classList.add('hidden');
+                    localStorage.setItem('earthChallenge_v5', JSON.stringify(appData));
+                }
+            }, 30);
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            if(globe) globe.rotation.y -= 0.0015;
+            if(globe) globe.rotation.y -= 0.001;
             controls.update();
             renderer.render(scene, camera);
         }
