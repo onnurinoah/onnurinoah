@@ -47,13 +47,13 @@
     </div>
 
     <div class="fixed top-6 right-6 z-20 flex flex-col items-end gap-4"> 
-        <div class="glass p-5 rounded-2xl text-right min-w-[160px]"> 
+        <div class="glass p-5 rounded-2xl text-right min-w-[180px]"> 
             <p class="text-[11px] text-yellow-400/80 font-bold tracking-widest mb-1">전체 목표기록</p> 
             <div id="global-target-display" class="title-font text-2xl text-white italic">0 km</div> 
         </div> 
 
         <div id="personal-stat-card" class="opacity-0 transform translate-x-10 transition-all duration-700"> 
-            <div class="glass p-5 rounded-2xl border-r-4 border-r-yellow-400 text-right min-w-[200px]"> 
+            <div class="glass p-5 rounded-2xl border-r-4 border-r-yellow-400 text-right min-w-[220px]"> 
                 <p class="text-yellow-400 font-black text-[11px] tracking-widest mb-1 uppercase">내 기록</p> 
                 <div class="space-y-2"> 
                     <div class="flex items-baseline justify-end gap-2"> 
@@ -74,12 +74,14 @@
     <div class="ui-overlay"> 
         <div class="text-center pt-10"> 
             <div class="flex items-center justify-center gap-3 mb-2">
-                <p class="text-yellow-400 text-sm md:text-base font-bold tracking-[0.4em] title-font">누적 거리</p>
-                <span class="text-[11px] md:text-xs text-white/50 font-bold">(지구 둘레 40,075km)</span>
+                <p class="text-yellow-400 text-lg md:text-xl font-bold tracking-[0.4em] title-font">누적 거리</p>
+                <span class="text-xs md:text-sm text-white/50 font-bold">(지구 둘레 40,075km)</span>
             </div>
             <div class="flex flex-col items-center"> 
                 <div id="dist-container" class="title-font text-7xl md:text-9xl tracking-tighter flex items-baseline">
-                    <span id="dist-integer">0</span><span id="dist-fraction" class="text-3xl md:text-6xl">.0</span><span id="dist-unit" class="text-3xl md:text-6xl ml-2 italic text-slate-500">km</span>
+                    <span id="dist-integer">0</span>
+                    <span id="dist-fraction" class="text-4xl md:text-7xl">.0</span>
+                    <span id="dist-unit" class="text-4xl md:text-7xl ml-2 italic text-slate-500">km</span>
                 </div> 
                 <div class="mt-4"> 
                     <div id="percent-text" class="text-4xl font-black text-white">0.00%</div> 
@@ -149,7 +151,7 @@
         const GLOBE_RADIUS = 2; 
         const PATH_RADIUS = 2.15; 
         
-        let appData = JSON.parse(localStorage.getItem('earthChallenge_v9')) || {  
+        let appData = JSON.parse(localStorage.getItem('earthChallenge_v10')) || {  
             users: {},  
             totalKm: 0, 
             totalGoal: 0 
@@ -185,18 +187,19 @@
             ); 
             scene.add(globe); 
 
-            // 마커 검은 사각형 제거 설정
+            // 빛의 끝지점(마커) - 검은 사각배경 제거를 위한 강화된 설정
             marker = new THREE.Group(); 
-            const markerTexture = textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png');
-            const glow = new THREE.Sprite(new THREE.SpriteMaterial({ 
-                map: markerTexture, 
+            const glowTexture = textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png');
+            const glowMat = new THREE.SpriteMaterial({ 
+                map: glowTexture, 
                 color: 0xffcc00, 
                 transparent: true, 
-                blending: THREE.AdditiveBlending, // 검은 배경 제거
-                depthWrite: false, 
-                alphaTest: 0.01 // 투명도 임계값 설정
-            })); 
-            glow.scale.set(1.2, 1.2, 1); 
+                blending: THREE.AdditiveBlending, // 핵심: 검은색을 투명하게 처리
+                depthWrite: false, // 다른 물체 가림 방지
+                depthTest: false   // 다른 물체 뒤에 숨지 않게 처리 (가장 확실한 방법)
+            });
+            const glow = new THREE.Sprite(glowMat); 
+            glow.scale.set(1.5, 1.5, 1); // 요청하신 대로 크기를 조금 더 키움
             marker.add(glow); 
             scene.add(marker); 
 
@@ -229,7 +232,7 @@
                 onUpdate: () => {
                     const globalRatio = visualData.totalGoal > 0 ? Math.min(visualData.totalKm / visualData.totalGoal, 1) : 0;
                     
-                    // 소수점 이하 분리 포맷팅
+                    // 소수점 이하 숫자 크기 조절 포맷팅
                     const formatted = visualData.totalKm.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
                     const parts = formatted.split('.');
                     document.getElementById('dist-integer').innerText = parts[0];
@@ -281,18 +284,18 @@
             } 
         }
 
+        // 반짝임 효과 강화
         function triggerSparkle() {
             gsap.to(marker.scale, {
-                x: 5, y: 5, z: 5, 
-                duration: 0.4, 
+                x: 6, y: 6, z: 6, 
+                duration: 0.3, 
                 yoyo: true, 
                 repeat: 3, 
-                ease: "power2.inOut",
-                onComplete: () => { marker.scale.set(1.2, 1.2, 1); }
+                ease: "back.out(2)",
+                onComplete: () => { marker.scale.set(1, 1, 1); }
             });
         }
 
-        // --- 기존 모달 로직 ---
         function openLoginModal() { 
             document.getElementById('modal-backdrop').classList.remove('hidden'); 
             document.getElementById('login-modal').classList.remove('hidden'); 
@@ -335,7 +338,7 @@
         } 
 
         function saveAndClose() { 
-            localStorage.setItem('earthChallenge_v9', JSON.stringify(appData)); 
+            localStorage.setItem('earthChallenge_v10', JSON.stringify(appData)); 
             closeModals(); 
             updateVisuals(); 
             document.getElementById('inputKm').value = '';
@@ -363,7 +366,7 @@
                     clearInterval(timer); 
                     btn.disabled = false; 
                     status.classList.add('hidden'); 
-                    localStorage.setItem('earthChallenge_v9', JSON.stringify(appData)); 
+                    localStorage.setItem('earthChallenge_v10', JSON.stringify(appData)); 
                     triggerSparkle();
                 } 
             }, 50); 
