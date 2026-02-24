@@ -16,29 +16,30 @@
         .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem; }
         .interactive { pointer-events: auto; }
         .title-font { font-family: 'Black Han Sans', sans-serif; }
-        .glass { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); }
-
-        /* 러닝 시뮬레이터 (우측) */
+        
+        /* 가로형 러닝 시뮬레이터 (하단) */
         #runner-zone {
-            position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
-            width: 120px; height: 300px; border-radius: 60px; overflow: hidden;
-            background: linear-gradient(to bottom, rgba(250,204,21,0.1), rgba(0,0,0,0.5));
-            border: 2px solid rgba(250,204,21,0.3); z-index: 20; display: flex; flex-direction: column; align-items: center;
+            position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 600px; height: 100px; border-radius: 20px; overflow: hidden;
+            background: rgba(250, 204, 21, 0.05); border: 1px solid rgba(250, 204, 21, 0.2);
+            z-index: 20; display: flex; align-items: center;
         }
         #ground-lane {
-            position: absolute; bottom: 0; width: 40px; height: 100%;
-            background: repeating-linear-gradient(0deg, #facc15 0px, #facc15 10px, transparent 10px, transparent 40px);
-            opacity: 0.3;
+            position: absolute; bottom: 15px; width: 200%; height: 4px;
+            background: repeating-linear-gradient(90deg, #facc15 0px, #facc15 20px, transparent 20px, transparent 40px);
+            opacity: 0.5;
         }
-        .running #ground-lane { animation: moveGround 0.5s linear infinite; }
-        @keyframes moveGround { from { transform: translateY(0); } to { transform: translateY(40px); } }
+        .running #ground-lane { animation: moveGroundHorizontally 0.5s linear infinite; }
+        @keyframes moveGroundHorizontally { from { transform: translateX(0); } to { transform: translateX(-40px); } }
         
-        #runner-char { font-size: 50px; z-index: 5; margin-top: auto; margin-bottom: 40px; transition: transform 0.2s; }
-        .running #runner-char { animation: jump 0.4s ease-in-out infinite; }
-        @keyframes jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        #runner-char { 
+            position: relative; font-size: 50px; z-index: 25; margin-left: 40px; 
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.8)); transition: transform 0.2s;
+        }
+        .running #runner-char { animation: runBounce 0.3s ease-in-out infinite alternate; }
+        @keyframes runBounce { from { transform: translateY(0) rotate(-5deg); } to { transform: translateY(-10px) rotate(5deg); } }
 
-        /* D-Day 뱃지 */
-        .dday-badge { background: #ef4444; color: white; padding: 4px 12px; border-radius: 8px; font-weight: 900; font-size: 1.2rem; }
+        .dday-badge { background: #ef4444; color: white; padding: 4px 12px; border-radius: 8px; font-weight: 900; font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -49,25 +50,25 @@
         <div class="flex justify-between items-start">
             <div class="text-left">
                 <p class="text-yellow-400 text-sm font-bold tracking-widest title-font mb-1">걸어서 지구 한바퀴</p>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
                     <span class="dday-badge" id="dday-text">D-DAY</span>
-                    <span class="text-slate-400 text-xs font-bold uppercase tracking-tighter">Target: 6.19</span>
+                    <span class="text-slate-400 text-xs font-bold">목표: 6월 19일</span>
                 </div>
             </div>
         </div>
 
-        <div class="flex flex-col items-center mb-10">
-            <h1 class="title-font text-8xl md:text-[10rem] leading-none mb-2">
-                <span id="dist-text">0.00</span><span class="text-2xl text-slate-400 ml-2 font-sans italic">km</span>
+        <div class="text-center mb-20">
+            <h1 class="title-font text-8xl md:text-[11rem] leading-none mb-4">
+                <span id="dist-text">0.00</span><span class="text-2xl text-slate-500 ml-2 font-sans italic">km</span>
             </h1>
-            <div class="flex items-center gap-4 bg-black/40 px-6 py-2 rounded-full border border-white/10">
-                <span class="text-slate-400 font-bold">진행률</span>
-                <span id="percent-text" class="text-yellow-400 font-black text-4xl">0.00%</span>
+            <div class="inline-flex items-center gap-4 bg-yellow-400 text-black px-8 py-2 rounded-full shadow-xl">
+                <span class="font-black text-sm uppercase tracking-tighter">Progress</span>
+                <span id="percent-text" class="font-black text-4xl">0.00%</span>
             </div>
         </div>
 
         <div class="w-full max-w-md mx-auto">
-            <button onclick="toggleModal('record', true)" class="interactive w-full py-6 bg-yellow-400 text-black rounded-3xl font-black text-2xl shadow-[0_20px_50px_rgba(250,204,21,0.3)] active:scale-95 transition-transform">
+            <button onclick="toggleModal('record', true)" class="interactive w-full py-6 bg-white text-black rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-transform">
                 기록 추가하기
             </button>
         </div>
@@ -75,36 +76,36 @@
 
     <div id="runner-zone">
         <div id="ground-lane"></div>
-        <div id="runner-char">🏃</div>
-        <div class="absolute top-4 text-[10px] text-yellow-400 font-bold uppercase vertical-text tracking-widest text-center">Sprint<br>Mode</div>
+        <div id="runner-char">✨🏃</div>
+        <div class="absolute right-6 bottom-4 text-[10px] text-yellow-400/50 font-black italic">STEP BY STEP...</div>
     </div>
 
     <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl">
-        <div class="interactive glass w-full max-w-sm p-10 rounded-[50px] text-white text-center">
+        <div class="interactive glass w-full max-w-sm p-10 rounded-[50px] text-white text-center border border-white/20">
             <h3 class="title-font text-3xl mb-8 text-yellow-400">활동 기록</h3>
             <div class="space-y-6 text-left">
                 <div>
-                    <label class="text-xs text-slate-500 mb-2 block font-bold">날짜</label>
+                    <label class="text-xs text-slate-500 mb-2 block font-bold uppercase tracking-widest">날짜</label>
                     <input type="date" id="inputDate" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-yellow-400 text-lg font-bold">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-500 mb-2 block font-bold">오늘 이동한 거리 (KM)</label>
+                    <label class="text-xs text-slate-500 mb-2 block font-bold uppercase tracking-widest">이동 거리 (KM)</label>
                     <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 outline-none focus:border-yellow-400 text-5xl font-bold text-center">
                 </div>
             </div>
             <div class="flex gap-4 mt-10">
                 <button onclick="toggleModal('record', false)" class="flex-1 py-5 font-bold text-slate-400">취소</button>
-                <button onclick="submitRecord()" class="flex-1 py-5 bg-yellow-400 text-black rounded-2xl font-black shadow-lg">기록 저장</button>
+                <button onclick="submitRecord()" class="flex-1 py-5 bg-yellow-400 text-black rounded-2xl font-black shadow-lg">저장</button>
             </div>
         </div>
     </div>
 
     <script>
         let scene, camera, renderer, globe, marker, controls, pathTube;
-        let totalKm = parseFloat(localStorage.getItem('walk_earth_km_v3')) || 0;
+        let totalKm = parseFloat(localStorage.getItem('walk_earth_km_v4')) || 0;
         const EARTH_CIRCUMFERENCE = 40075; 
         const GLOBE_RADIUS = 2;
-        const PATH_RADIUS = 2.15; 
+        const PATH_RADIUS = 2.1; // 지구보다 살짝 크게
 
         function init3D() {
             scene = new THREE.Scene();
@@ -127,13 +128,16 @@
             );
             scene.add(globe);
 
+            // 빛의 마커
             marker = new THREE.Group();
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({
                 map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
-                color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending
+                color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending,
+                depthTest: false // 가려지지 않게 설정
             }));
             glow.scale.set(1.2, 1.2, 1);
             marker.add(glow);
+            marker.renderOrder = 999; // 항상 위에 렌더링
             scene.add(marker);
 
             camera.position.z = 6;
@@ -141,9 +145,9 @@
             controls.enableDamping = true;
             controls.enableZoom = false;
 
-            // D-Day 계산
+            // D-Day 계산 (6월 19일)
             const today = new Date();
-            const dday = new Date(today.getFullYear(), 5, 19); // 6월 19일 (0부터 시작하므로 5)
+            const dday = new Date(today.getFullYear(), 5, 19); 
             if (today > dday) dday.setFullYear(dday.getFullYear() + 1);
             const diff = Math.ceil((dday - today) / (1000 * 60 * 60 * 24));
             document.getElementById('dday-text').innerText = `D-${diff}`;
@@ -161,7 +165,7 @@
             
             if (ratio > 0) {
                 const points = [];
-                const segments = Math.max(2, Math.floor(ratio * 200));
+                const segments = Math.max(2, Math.floor(ratio * 300));
                 for (let i = 0; i <= segments; i++) {
                     const pRatio = (i / segments) * ratio;
                     const angle = (Math.PI / 2) - (pRatio * Math.PI * 2);
@@ -169,10 +173,15 @@
                 }
 
                 const pathCurve = new THREE.CatmullRomCurve3(points);
-                // 궤적 두께를 0.02로 얇게 조정
-                const tubeGeo = new THREE.TubeGeometry(pathCurve, 128, 0.02, 8, false);
-                const tubeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+                const tubeGeo = new THREE.TubeGeometry(pathCurve, segments, 0.025, 8, false);
+                const tubeMat = new THREE.MeshBasicMaterial({ 
+                    color: 0xfacc15, 
+                    depthTest: false, // 이 설정이 지구에 가려지는 것을 방지함
+                    transparent: true,
+                    opacity: 0.9
+                });
                 pathTube = new THREE.Mesh(tubeGeo, tubeMat);
+                pathTube.renderOrder = 998; // 마커보다는 아래, 지구보다는 위
                 scene.add(pathTube);
 
                 const lastPoint = points[points.length - 1];
@@ -192,15 +201,12 @@
 
             const startKm = totalKm;
             totalKm += addedKm;
-            localStorage.setItem('walk_earth_km_v3', totalKm);
+            localStorage.setItem('walk_earth_km_v4', totalKm);
             toggleModal('record', false);
 
-            // 러닝 애니메이션 시작
+            // 가로 러닝 애니메이션 활성화
             const zone = document.getElementById('runner-zone');
             zone.classList.add('running');
-            const runner = document.getElementById('runner-char');
-            // 사용자의 요청대로 예수님 이모지나 성스러운 느낌의 캐릭터로 교체 가능
-            runner.innerText = "✨"; // 빛나는 존재로 표현 (혹은 직접 "🙏" 등 선택 가능)
 
             gsap.to({ val: startKm }, {
                 val: totalKm,
@@ -209,7 +215,6 @@
                 onUpdate: function() { updateVisuals(this.targets()[0].val); },
                 onComplete: () => {
                     zone.classList.remove('running');
-                    runner.innerText = "🏃";
                     gsap.fromTo(marker.scale, {x:1, y:1}, {x:3, y:3, duration: 0.5, yoyo:true, repeat:1});
                     kmInput.value = "";
                 }
