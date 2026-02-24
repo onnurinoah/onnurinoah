@@ -151,20 +151,28 @@
         const GLOBE_RADIUS = 2; 
         const PATH_RADIUS = 2.15; 
         
-        let appData = JSON.parse(localStorage.getItem('earthChallenge_v10')) || {  
-            users: {},  
-            totalKm: 0, 
-            totalGoal: 0 
+        let appData = JSON.parse(localStorage.getItem('earthChallenge_v11')) || {  
+            users: {}, totalKm: 0, totalGoal: 0 
         }; 
 
-        let visualData = {
-            totalKm: appData.totalKm,
-            totalGoal: appData.totalGoal,
-            personalDist: 0,
-            personalTarget: 0
-        };
-
+        let visualData = { totalKm: appData.totalKm, totalGoal: appData.totalGoal, personalDist: 0, personalTarget: 0 };
         let currentUserId = null; 
+
+        // [핵심] 검은 사각형 방지를 위한 프로그래밍 방식의 빛 텍스처 생성
+        function createGlowTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+            gradient.addColorStop(0, 'rgba(255, 220, 100, 1)'); // 중앙: 밝은 노랑
+            gradient.addColorStop(0.2, 'rgba(255, 180, 50, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)'); // 끝: 완전 투명
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 128, 128);
+            return new THREE.CanvasTexture(canvas);
+        }
 
         function init3D() { 
             scene = new THREE.Scene(); 
@@ -174,12 +182,12 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
             document.getElementById('canvas-container').appendChild(renderer.domElement); 
 
-            const textureLoader = new THREE.TextureLoader(); 
             scene.add(new THREE.AmbientLight(0xffffff, 1.2)); 
             const sunLight = new THREE.DirectionalLight(0xffffff, 1.5); 
             sunLight.position.set(5, 3, 5); 
             scene.add(sunLight); 
 
+            const textureLoader = new THREE.TextureLoader(); 
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'); 
             globe = new THREE.Mesh( 
                 new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64),  
@@ -187,19 +195,17 @@
             ); 
             scene.add(globe); 
 
-            // 빛의 끝지점(마커) - 검은 사각배경 제거를 위한 강화된 설정
+            // 마커 생성 (이미지 로딩 대신 생성된 텍스처 사용)
             marker = new THREE.Group(); 
-            const glowTexture = textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png');
             const glowMat = new THREE.SpriteMaterial({ 
-                map: glowTexture, 
-                color: 0xffcc00, 
+                map: createGlowTexture(), 
                 transparent: true, 
-                blending: THREE.AdditiveBlending, // 핵심: 검은색을 투명하게 처리
-                depthWrite: false, // 다른 물체 가림 방지
-                depthTest: false   // 다른 물체 뒤에 숨지 않게 처리 (가장 확실한 방법)
+                blending: THREE.AdditiveBlending, // 검은색을 빛으로 처리하여 날려버림
+                depthWrite: false, 
+                depthTest: false 
             });
             const glow = new THREE.Sprite(glowMat); 
-            glow.scale.set(1.5, 1.5, 1); // 요청하신 대로 크기를 조금 더 키움
+            glow.scale.set(1.5, 1.5, 1); 
             marker.add(glow); 
             scene.add(marker); 
 
@@ -208,50 +214,37 @@
             controls.enableDamping = true; 
             controls.enableZoom = false; 
 
-            updateDDay();
-            updateVisuals(true); 
-            animate(); 
+            updateDDay(); updateVisuals(true); animate(); 
         } 
 
         function updateDDay() {
             const target = new Date('2026-06-19T00:00:00');
-            const now = new Date();
-            const diff = target - now;
+            const diff = target - new Date();
             const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
             document.getElementById('d-day-text').innerText = days > 0 ? `D-${days}` : (days === 0 ? "D-Day" : `D+${Math.abs(days)}`);
         }
 
         function updateVisuals(immediate = false) { 
             const duration = immediate ? 0 : 2.5; 
-
             gsap.to(visualData, {
-                totalKm: appData.totalKm,
-                totalGoal: appData.totalGoal,
-                duration: duration,
-                ease: "power2.out",
+                totalKm: appData.totalKm, totalGoal: appData.totalGoal,
+                duration: duration, ease: "power2.out",
                 onUpdate: () => {
                     const globalRatio = visualData.totalGoal > 0 ? Math.min(visualData.totalKm / visualData.totalGoal, 1) : 0;
-                    
-                    // 소수점 이하 숫자 크기 조절 포맷팅
-                    const formatted = visualData.totalKm.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
-                    const parts = formatted.split('.');
+                    const parts = visualData.totalKm.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}).split('.');
                     document.getElementById('dist-integer').innerText = parts[0];
                     document.getElementById('dist-fraction').innerText = "." + parts[1];
-
                     document.getElementById('percent-text').innerText = (globalRatio * 100).toFixed(2) + "%"; 
                     document.getElementById('global-progress-bar').style.width = (globalRatio * 100) + "%"; 
                     document.getElementById('global-target-display').innerText = Math.floor(visualData.totalGoal).toLocaleString() + " km"; 
                     renderPath(visualData.totalKm);
                 }
             });
-
             if (currentUserId && appData.users[currentUserId]) { 
                 const u = appData.users[currentUserId]; 
                 gsap.to(visualData, {
-                    personalDist: u.dist,
-                    personalTarget: u.target,
-                    duration: duration,
-                    ease: "power2.out",
+                    personalDist: u.dist, personalTarget: u.target,
+                    duration: duration, ease: "power2.out",
                     onUpdate: () => {
                         const myRatio = visualData.personalTarget > 0 ? Math.min(visualData.personalDist / visualData.personalTarget, 1) : 0; 
                         document.getElementById('my-dist-text').innerText = visualData.personalDist.toLocaleString(undefined, {minimumFractionDigits: 1}); 
@@ -275,25 +268,17 @@
                     const angle = Math.PI - (pRatio * Math.PI * 2); 
                     points.push(new THREE.Vector3(Math.cos(angle) * PATH_RADIUS, Math.sin(angle) * PATH_RADIUS, 0)); 
                 } 
-                const pathCurve = new THREE.CatmullRomCurve3(points); 
-                const tubeGeo = new THREE.TubeGeometry(pathCurve, 128, 0.02, 8, false); 
-                const tubeMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 2 }); 
-                pathTube = new THREE.Mesh(tubeGeo, tubeMat); 
+                pathTube = new THREE.Mesh(
+                    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 128, 0.02, 8, false),
+                    new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 2 })
+                ); 
                 scene.add(pathTube); 
                 marker.position.copy(points[points.length - 1]); 
             } 
         }
 
-        // 반짝임 효과 강화
         function triggerSparkle() {
-            gsap.to(marker.scale, {
-                x: 6, y: 6, z: 6, 
-                duration: 0.3, 
-                yoyo: true, 
-                repeat: 3, 
-                ease: "back.out(2)",
-                onComplete: () => { marker.scale.set(1, 1, 1); }
-            });
+            gsap.to(marker.scale, { x: 6, y: 6, z: 6, duration: 0.3, yoyo: true, repeat: 3, ease: "back.out(2)", onComplete: () => { marker.scale.set(1.5, 1.5, 1); } });
         }
 
         function openLoginModal() { 
@@ -309,8 +294,8 @@
             if(!name || phone.length < 4) return alert("정보를 정확히 입력해주세요."); 
             currentUserId = `${name}_${phone}`; 
             document.getElementById('login-modal').classList.add('hidden'); 
-            if (appData.users[currentUserId]) { showRecordModal(); } 
-            else { document.getElementById('target-modal').classList.remove('hidden'); } 
+            if (appData.users[currentUserId]) showRecordModal(); 
+            else document.getElementById('target-modal').classList.remove('hidden'); 
         } 
 
         function processTargetSetting() { 
@@ -331,18 +316,14 @@
         function processSubmitRecord() { 
             const val = parseFloat(document.getElementById('inputKm').value); 
             if(!val || val <= 0) return alert("거리를 입력해주세요."); 
-            appData.users[currentUserId].dist += val; 
-            appData.totalKm += val; 
-            saveAndClose(); 
-            triggerSparkle();
+            appData.users[currentUserId].dist += val; appData.totalKm += val; 
+            saveAndClose(); triggerSparkle();
         } 
 
         function saveAndClose() { 
-            localStorage.setItem('earthChallenge_v10', JSON.stringify(appData)); 
-            closeModals(); 
-            updateVisuals(); 
-            document.getElementById('inputKm').value = '';
-            document.getElementById('targetInput').value = '';
+            localStorage.setItem('earthChallenge_v11', JSON.stringify(appData)); 
+            closeModals(); updateVisuals(); 
+            document.getElementById('inputKm').value = ''; document.getElementById('targetInput').value = '';
         } 
 
         function closeModals() { document.getElementById('modal-backdrop').classList.add('hidden'); } 
@@ -351,22 +332,17 @@
             const btn = document.getElementById('test-btn'); 
             const status = document.getElementById('test-status'); 
             const countDisplay = document.getElementById('test-count'); 
-            btn.disabled = true; 
-            status.classList.remove('hidden'); 
+            btn.disabled = true; status.classList.remove('hidden'); 
             let count = 0; 
             const timer = setInterval(() => { 
                 for(let i=0; i<10; i++) {
-                    count++; 
-                    appData.totalGoal += (50 + Math.random() * 50); 
-                    appData.totalKm += (1 + Math.random() * 24); 
+                    count++; appData.totalGoal += (50 + Math.random() * 50); appData.totalKm += (1 + Math.random() * 24); 
                 } 
                 countDisplay.innerText = count; 
                 updateVisuals(); 
                 if (count >= 1000) { 
-                    clearInterval(timer); 
-                    btn.disabled = false; 
-                    status.classList.add('hidden'); 
-                    localStorage.setItem('earthChallenge_v10', JSON.stringify(appData)); 
+                    clearInterval(timer); btn.disabled = false; status.classList.add('hidden'); 
+                    localStorage.setItem('earthChallenge_v11', JSON.stringify(appData)); 
                     triggerSparkle();
                 } 
             }, 50); 
@@ -375,14 +351,11 @@
         function animate() { 
             requestAnimationFrame(animate); 
             if(globe) globe.rotation.y -= 0.0005; 
-            controls.update(); 
-            renderer.render(scene, camera); 
+            controls.update(); renderer.render(scene, camera); 
         } 
 
         window.addEventListener('resize', () => { 
-            camera.aspect = window.innerWidth / window.innerHeight; 
-            camera.updateProjectionMatrix(); 
-            renderer.setSize(window.innerWidth, window.innerHeight); 
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); 
         }); 
 
         init3D(); 
