@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 지구 원정대 v2</title>
+    <title>3D 지구 원정대 v2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -13,10 +13,10 @@
         
         body { margin: 0; background: #00050a; color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; height: 100dvh; touch-action: none; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem 1.5rem; }
+        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 3rem 1.5rem; }
         .interactive { pointer-events: auto; }
         .title-font { font-family: 'Black Han Sans', sans-serif; }
-        .glass { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15); }
+        .glass { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); }
         
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
     </style>
@@ -27,63 +27,62 @@
 
     <div class="ui-overlay">
         <div class="text-center">
-            <p class="text-yellow-400 text-xs font-bold tracking-[0.3em] mb-1">EARTH EXPEDITION</p>
-            <h1 class="title-font text-5xl md:text-7xl mb-1">
-                <span id="dist-text">0.00</span><span class="text-xl text-slate-400 ml-1 font-sans">km</span>
+            <p class="text-yellow-400 text-sm font-bold tracking-[0.4em] mb-2">EARTH EXPEDITION</p>
+            <h1 class="title-font text-7xl md:text-9xl mb-4">
+                <span id="dist-text">0.00</span><span class="text-2xl text-slate-400 ml-2 font-sans">km</span>
             </h1>
-            <div class="inline-block px-4 py-1 rounded-full bg-yellow-400/20 border border-yellow-400/50">
-                <span id="percent-text" class="text-yellow-400 font-black text-lg">0.00%</span>
-                <span class="text-yellow-400/70 text-xs ml-1">완주</span>
+            <div class="inline-block px-6 py-2 rounded-full bg-yellow-400 text-black shadow-[0_0_20px_rgba(250,204,21,0.5)]">
+                <span id="percent-text" class="font-black text-3xl">0.00%</span>
+                <span class="font-bold text-sm ml-1 uppercase">Completed</span>
             </div>
         </div>
 
         <div class="w-full max-w-md mx-auto space-y-4 text-center">
-            <button onclick="toggleModal('record', true)" class="interactive w-full py-5 bg-yellow-400 text-black rounded-2xl font-black text-xl shadow-[0_0_30px_rgba(250,204,21,0.4)] active:scale-95 transition-transform">
-                오늘의 원정 기록
+            <button onclick="toggleModal('record', true)" class="interactive w-full py-6 bg-white text-black rounded-2xl font-black text-2xl shadow-2xl active:scale-95 transition-transform">
+                기록 추가하기
             </button>
         </div>
     </div>
 
-    <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-        <div class="interactive glass w-full max-w-sm p-8 rounded-[35px] text-white">
-            <h3 class="title-font text-2xl mb-6 text-yellow-400">기록 추가</h3>
-            <div class="space-y-5">
+    <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+        <div class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white">
+            <h3 class="title-font text-3xl mb-8 text-yellow-400">활동 기록</h3>
+            <div class="space-y-6">
                 <div>
-                    <label class="text-xs text-slate-400 ml-1 mb-2 block">활동 날짜</label>
+                    <label class="text-xs text-slate-400 ml-1 mb-2 block uppercase tracking-widest">Select Date</label>
                     <input type="date" id="inputDate" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-lg font-bold">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 ml-1 mb-2 block">이동 거리 (최대 50km)</label>
-                    <input type="number" id="inputKm" step="0.1" max="50" placeholder="0.0" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-3xl font-bold">
+                    <label class="text-xs text-slate-400 ml-1 mb-2 block uppercase tracking-widest">Distance (KM)</label>
+                    <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/10 border border-white/20 rounded-2xl p-5 outline-none focus:border-yellow-400 text-4xl font-bold">
                 </div>
             </div>
             <div class="flex gap-4 mt-10">
                 <button onclick="toggleModal('record', false)" class="flex-1 py-4 font-bold text-slate-400">취소</button>
-                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black shadow-lg">기록 저장</button>
+                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black shadow-lg">저장</button>
             </div>
         </div>
     </div>
 
-    <div id="bible-modal" onclick="closeBible()" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-10 bg-black/60 backdrop-blur-lg cursor-pointer">
+    <div id="bible-modal" onclick="closeBible()" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-10 bg-black/80 backdrop-blur-2xl cursor-pointer">
         <div class="max-w-lg text-center pointer-events-none">
-            <div class="w-12 h-1 bg-yellow-400 mx-auto mb-8 opacity-50"></div>
-            <p id="bible-text" class="text-2xl md:text-4xl font-black leading-tight text-white mb-6 break-keep"></p>
-            <p id="bible-ref" class="text-yellow-400 font-bold tracking-widest text-base uppercase"></p>
-            <p class="mt-12 text-white/30 text-xs font-bold tracking-widest uppercase">화면을 터치하여 계속하기</p>
+            <div class="w-16 h-1 bg-yellow-400 mx-auto mb-10"></div>
+            <p id="bible-text" class="text-3xl md:text-5xl font-black leading-tight text-white mb-8 break-keep"></p>
+            <p id="bible-ref" class="text-yellow-400 font-bold tracking-[0.2em] text-lg uppercase"></p>
         </div>
     </div>
 
     <script>
         const verses = [
-            { text: "이기기를 다투는 자마다 모든 일에 절제하나니 우리는 썩지 아니할 관을 얻고자 하노라", ref: "고린도전서 9:25" },
-            { text: "내가 선한 싸움을 싸우고 나의 달려갈 길을 마치고 믿음을 지켰으니", ref: "디모데후서 4:7" },
-            { text: "푯대를 향하여 그리스도 예수 안에서 부름의 상을 위하여 달려가노라", ref: "빌립보서 3:14" },
-            { text: "인내로써 우리 앞에 당한 경주를 하며 믿음의 주요 온전하게 하시는 이를 바라보자", ref: "히브리서 12:1-2" },
-            { text: "여호와를 앙망하는 자는 새 힘을 얻으리니 달음박질하여도 곤비하지 아니하겠고", ref: "이사야 40:31" }
+            { text: "이기기를 다투는 자마다 모든 일에 절제하나니", ref: "고린도전서 9:25" },
+            { text: "내가 선한 싸움을 싸우고 나의 달려갈 길을 마쳤으니", ref: "디모데후서 4:7" },
+            { text: "푯대를 향하여 그리스도 예수 안에서 달려가노라", ref: "빌립보서 3:14" },
+            { text: "인내로써 우리 앞에 당한 경주를 하며", ref: "히브리서 12:1" },
+            { text: "여호와를 앙망하는 자는 새 힘을 얻으리니", ref: "이사야 40:31" }
         ];
 
         let scene, camera, renderer, globe, marker, controls, pathLine, sprite;
-        let totalKm = parseFloat(localStorage.getItem('earth3D_km_v2')) || 0;
+        let totalKm = parseFloat(localStorage.getItem('earth3D_km_v2.1')) || 0;
         const EARTH_CIRCUMFERENCE = 40075; 
         const GLOBE_RADIUS = 2;
 
@@ -92,46 +91,42 @@
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambientLight);
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
-            sunLight.position.set(5, 3, 5);
+            const sunLight = new THREE.PointLight(0xffffff, 1.5);
+            sunLight.position.set(10, 10, 10);
             scene.add(sunLight);
 
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             
-            // 지구 본체
+            // 지구
             globe = new THREE.Mesh(
                 new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64), 
-                new THREE.MeshPhongMaterial({ map: earthTexture, shininess: 5 })
+                new THREE.MeshPhongMaterial({ map: earthTexture })
             );
             scene.add(globe);
 
-            // 빛의 끝 (마커) - 더 크게 수정
-            marker = new THREE.Mesh(
-                new THREE.SphereGeometry(0.06, 16, 16), 
-                new THREE.MeshBasicMaterial({ color: 0xfacc15 })
-            );
-            sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+            // 빛의 마커 (크기 확대)
+            marker = new THREE.Group();
+            const glow = new THREE.Sprite(new THREE.SpriteMaterial({
                 map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
-                color: 0xfacc15, transparent: true, blending: THREE.AdditiveBlending
+                color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending
             }));
-            sprite.scale.set(0.8, 0.8, 1); // 빛의 크기 증가
-            marker.add(sprite);
+            glow.scale.set(1.2, 1.2, 1); 
+            marker.add(glow);
             scene.add(marker);
 
-            // 경로 선 - 시각적으로 더 진하게 처리
-            const pathMaterial = new THREE.LineBasicMaterial({ 
-                color: 0xfacc15, 
-                linewidth: 3, // WebGL 환경에 따라 제한적일 수 있음
-                transparent: true, 
-                opacity: 0.8 
-            });
-            pathLine = new THREE.Line(new THREE.BufferGeometry(), pathMaterial);
+            // 궤적 선 (두께감을 위해 노란색 선명하게)
+            pathLine = new THREE.Line(
+                new THREE.BufferGeometry(), 
+                new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 5, transparent: true, opacity: 0.9 })
+            );
+            // 지구에 가려지지 않도록 렌더링 순서 조정
+            pathLine.renderOrder = 1; 
             scene.add(pathLine);
 
             camera.position.z = 5;
@@ -139,7 +134,6 @@
             controls.enableDamping = true;
             controls.enableZoom = false;
 
-            // 초기 날짜 설정
             document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
 
             updateVisuals(totalKm);
@@ -150,34 +144,33 @@
             const ratio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
             const percent = (ratio * 100).toFixed(2);
             
-            // 시계 방향 궤적 계산 (정면에서 봤을 때 구의 둘레를 따라 이동)
-            // 12시 방향에서 시작하도록 -Math.PI / 2 오프셋 부여
-            const angle = (ratio * Math.PI * 2) - (Math.PI / 2);
-            const displayRadius = GLOBE_RADIUS + 0.08;
+            // 12시 방향에서 시작하여 시계 방향으로 회전하는 각도 계산
+            // 0%일 때 90도(Math.PI/2)에서 시작하여 마이너스 방향으로 회전
+            const angle = (Math.PI / 2) - (ratio * Math.PI * 2);
+            const displayRadius = GLOBE_RADIUS + 0.15; // 지구 표면에서 더 띄움
 
-            // X, Y 좌표를 사용하여 시계처럼 회전 (시각적 2D 평면 효과)
-            marker.position.set(
-                displayRadius * Math.cos(angle),
-                -displayRadius * Math.sin(angle), // 음수를 붙여 시계방향 구현
-                0.1 // 지구 앞면에 살짝 배치
-            );
+            // 정면에서 잘 보이도록 X, Y 좌표 설정 (Z는 살짝 앞으로)
+            const x = displayRadius * Math.cos(angle);
+            const y = displayRadius * Math.sin(angle);
+            const z = 0.2; 
 
-            // 궤적 선 업데이트
+            marker.position.set(x, y, z);
+
+            // 궤적 포인트 생성
             const points = [];
-            const segments = 120;
+            const segments = Math.max(2, Math.floor(ratio * 200)); 
             for (let i = 0; i <= segments; i++) {
                 const pRatio = (i / segments) * ratio;
-                const pAngle = (pRatio * Math.PI * 2) - (Math.PI / 2);
+                const pAngle = (Math.PI / 2) - (pRatio * Math.PI * 2);
                 points.push(new THREE.Vector3(
                     displayRadius * Math.cos(pAngle),
-                    -displayRadius * Math.sin(pAngle),
-                    0.1
+                    displayRadius * Math.sin(pAngle),
+                    0.2
                 ));
             }
             pathLine.geometry.setFromPoints(points);
 
-            // UI 텍스트 업데이트
-            document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('percent-text').innerText = percent + "%";
         }
 
@@ -185,34 +178,22 @@
             const kmInput = document.getElementById('inputKm');
             let addedKm = parseFloat(kmInput.value) || 0;
 
-            // 리미트 체크
-            if (addedKm > 50) {
-                alert("하루 최대 이동 거리는 50km까지 기록할 수 있습니다.");
-                kmInput.value = 50;
-                return;
-            }
-            
-            if (addedKm <= 0) {
-                toggleModal('record', false);
-                return;
-            }
+            if (addedKm <= 0) { toggleModal('record', false); return; }
 
             const startKm = totalKm;
             totalKm += addedKm;
-            localStorage.setItem('earth3D_km_v2', totalKm);
+            localStorage.setItem('earth3D_km_v2.1', totalKm);
             toggleModal('record', false);
 
-            // 애니메이션 연출
             gsap.to({ val: startKm }, {
                 val: totalKm,
-                duration: 2,
-                ease: "power3.out",
+                duration: 2.5,
+                ease: "power2.out",
                 onUpdate: function() { updateVisuals(this.targets()[0].val); },
                 onComplete: () => {
-                    // 도착 강조 효과
-                    gsap.fromTo(sprite.scale, {x:0.8, y:0.8}, {x:1.8, y:1.8, duration: 0.3, yoyo:true, repeat:3});
-                    setTimeout(showBibleVerse, 600);
-                    kmInput.value = ""; // 입력창 초기화
+                    gsap.fromTo(marker.scale, {x:1, y:1}, {x:2.5, y:2.5, duration: 0.4, yoyo:true, repeat:1});
+                    setTimeout(showBibleVerse, 800);
+                    kmInput.value = "";
                 }
             });
         }
@@ -223,7 +204,7 @@
             document.getElementById('bible-ref').innerText = v.ref;
             const modal = document.getElementById('bible-modal');
             modal.classList.remove('hidden');
-            gsap.fromTo(modal, {opacity: 0}, {opacity: 1, duration: 0.5});
+            gsap.fromTo(modal, {opacity: 0, scale: 0.9}, {opacity: 1, scale: 1, duration: 0.5});
         }
 
         function closeBible() {
@@ -238,7 +219,7 @@
 
         function animate() { 
             requestAnimationFrame(animate); 
-            if(globe) globe.rotation.y += 0.001; 
+            if(globe) globe.rotation.y += 0.002; // 지구가 천천히 자전함
             if(controls) controls.update(); 
             renderer.render(scene, camera); 
         }
