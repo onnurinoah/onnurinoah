@@ -26,7 +26,6 @@
         .glass { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); } 
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; } 
         
-        /* 모바일 폰트 크기 미세 조정 */
         @media (max-width: 380px) {
             .dist-text { font-size: 3.5rem !important; }
             .dist-fraction { font-size: 2rem !important; }
@@ -180,7 +179,6 @@
             ); 
             scene.add(globe); 
 
-            // 마커와 궤적은 globe의 자식이 아닌 scene에 직접 추가하여 지구 회전과 분리
             marker = new THREE.Group(); 
             const glowMat = new THREE.SpriteMaterial({ 
                 map: createGlowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false 
@@ -206,6 +204,8 @@
 
         window.updateVisuals = function(immediate = false) { 
             const duration = immediate ? 0 : 2.5; 
+            
+            // 전역 기록 업데이트
             gsap.to(visualData, {
                 totalKm: window.appData.totalKm, 
                 totalGoal: window.appData.totalGoal,
@@ -222,6 +222,7 @@
                 }
             });
 
+            // 내 기록 업데이트 (로그인 상태일 때만)
             if (currentUserId && window.appData.users[currentUserId]) { 
                 const u = window.appData.users[currentUserId]; 
                 gsap.to(visualData, {
@@ -237,7 +238,10 @@
                     }
                 });
                 document.getElementById('personal-stat-card').classList.remove('opacity-0', 'translate-x-10');
-            } 
+            } else {
+                // 로그아웃 상태면 카드 숨김
+                document.getElementById('personal-stat-card').classList.add('opacity-0', 'translate-x-10');
+            }
         } 
 
         function renderPath(km) {
@@ -255,7 +259,6 @@
                     new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 128, 0.02, 8, false),
                     new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 2 })
                 ); 
-                // scene에 직접 추가되어 지구의 자전(globe.rotation)과 상관없이 고정됨
                 scene.add(pathTube); 
                 marker.position.copy(points[points.length - 1]); 
             } 
@@ -266,6 +269,9 @@
         }
 
         function openLoginModal() { 
+            // 로그인 시 입력값 초기화
+            document.getElementById('loginName').value = '';
+            document.getElementById('loginPhone').value = '';
             document.getElementById('modal-backdrop').classList.remove('hidden'); 
             document.getElementById('login-modal').classList.remove('hidden'); 
             document.getElementById('target-modal').classList.add('hidden'); 
@@ -276,13 +282,25 @@
             const name = document.getElementById('loginName').value.trim(); 
             const phone = document.getElementById('loginPhone').value.trim(); 
             if(!name || phone.length < 4) return alert("정보를 정확히 입력해주세요."); 
-            currentUserId = phone; currentUserName = name;
+            
+            // 이전 데이터 초기화 후 새로운 ID 할당
+            currentUserId = phone; 
+            currentUserName = name;
+            
             window.subscribeUser(phone);
             document.getElementById('login-modal').classList.add('hidden'); 
+            
+            // 데이터 매칭을 위한 지연 시간
             setTimeout(() => {
-                if (window.appData.users[currentUserId]) showRecordModal(); 
-                else document.getElementById('target-modal').classList.remove('hidden'); 
-            }, 500);
+                const user = window.appData.users[currentUserId];
+                if (user) {
+                    document.getElementById('modal-user-title').innerText = user.name + "님"; 
+                    document.getElementById('record-modal').classList.remove('hidden'); 
+                } else {
+                    document.getElementById('target-modal').classList.remove('hidden'); 
+                }
+                window.updateVisuals(true);
+            }, 800);
         } 
 
         async function processTargetSetting() { 
@@ -303,15 +321,20 @@
         async function processSubmitRecord() { 
             const val = parseFloat(document.getElementById('inputKm').value); 
             if(!val || val <= 0) return alert("거리를 입력해주세요."); 
-            // 50km 제한 로직 추가
             if(val > 50) return alert("한 번에 최대 50km까지 입력 가능합니다.");
             
             await window.firebaseAddRecord(currentUserId, val);
-            saveAndClose(); triggerSparkle();
+            triggerSparkle();
+            
+            // 자동 로그아웃 및 폼 초기화
+            currentUserId = null;
+            currentUserName = "";
+            saveAndClose();
         } 
 
         function saveAndClose() { 
-            closeModals(); window.updateVisuals(); 
+            closeModals(); 
+            window.updateVisuals(); 
             document.getElementById('inputKm').value = ''; 
             document.getElementById('targetInput').value = '';
         } 
@@ -320,7 +343,7 @@
 
         function animate() { 
             requestAnimationFrame(animate); 
-            if(globe) globe.rotation.y -= 0.0005; // 지구만 회전
+            if(globe) globe.rotation.y -= 0.0005; 
             if(controls) controls.update(); 
             if(renderer) renderer.render(scene, camera); 
         } 
