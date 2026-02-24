@@ -3,200 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>COUNTDOWN - Final Stable</title>
+    <title>COUNTDOWN - Walk Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap');
+        
         body { margin: 0; background: #000; color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; height: 100dvh; }
         
-        /* 캔버스 우선 배치 */
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        /* 캔버스가 이벤트를 받도록 설정 */
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; touch-action: none; }
         
-        /* UI 레이어: 클릭 관통 설정 */
-        .ui-layer { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 1.5rem; }
-        .interactive { pointer-events: auto; }
+        /* UI 레이어: pointer-events: none으로 설정하여 밑의 지구를 만질 수 있게 함 */
+        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 1.5rem; }
+        .interactive { pointer-events: auto; } /* 버튼 등은 클릭 가능하게 */
+
         .title-font { font-family: 'Black Han Sans', sans-serif; }
+        .glass { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
 
-        /* 하단 달리기 트랙 */
-        #track { position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%); width: 85%; height: 60px; background: rgba(255,255,255,0.1); border-radius: 30px; border: 1px solid rgba(250,204,21,0.3); z-index: 20; }
-        #runner-emoji { position: absolute; left: 0; top: 50%; transform: translateY(-50%); font-size: 30px; transition: left 0.5s ease-out; filter: drop-shadow(0 0 8px gold); }
+        /* 하단 달리기 존 */
+        #run-zone {
+            position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 500px; height: 80px; border-radius: 40px; 
+            background: linear-gradient(90deg, rgba(250,204,21,0.1) 0%, rgba(0,0,0,0.6) 100%);
+            border: 2px solid rgba(250,204,21,0.3); z-index: 20; overflow: hidden;
+            display: flex; align-items: center; padding: 0 20px;
+        }
+        #runner { font-size: 40px; transition: transform 0.1s; filter: drop-shadow(0 0 10px gold); }
+        .running #runner { animation: bounce 0.4s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 
-        /* 확대경: 절대 어둡지 않게 고정 */
-        #magnifier { position: fixed; right: 20px; top: 40%; width: 160px; height: 160px; border-radius: 40px; border: 3px solid #facc15; overflow: hidden; z-index: 30; background: #050505; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        /* 확대경 (절대 어둡지 않게 개선) */
+        #mag-wrap {
+            position: fixed; right: 20px; top: 45%; width: 180px; height: 180px;
+            border-radius: 40px; border: 3px solid #facc15; overflow: hidden;
+            z-index: 20; background: #000; box-shadow: 0 0 30px rgba(250,204,21,0.4);
+        }
     </style>
 </head>
 <body>
 
     <div id="canvas-container"></div>
 
-    <div class="ui-layer">
-        <div class="flex flex-col items-start">
-            <h1 class="text-yellow-400 text-5xl font-black title-font italic">COUNTDOWN</h1>
-            <div class="bg-red-600 px-4 py-1 rounded-lg mt-2 font-black text-2xl" id="dday-val">D-00</div>
-        </div>
-
-        <div class="flex flex-col items-center gap-2">
-            <div class="flex items-center gap-4 bg-black/60 p-6 rounded-[3rem] border border-white/20 backdrop-blur-md">
-                <div class="text-center">
-                    <span class="title-font text-8xl md:text-9xl" id="km-val">0.0</span>
-                    <span class="text-xl text-slate-400 font-bold ml-1">km</span>
+    <div class="ui-overlay">
+        <div class="flex justify-between items-start">
+            <div class="flex flex-col">
+                <h1 class="text-yellow-400 text-5xl font-black title-font italic">COUNTDOWN</h1>
+                <div class="bg-red-600 text-white px-4 py-1 rounded-lg mt-2 inline-block shadow-lg">
+                    <span class="text-3xl font-black" id="dday-text">D-00</span>
                 </div>
-                <div class="w-1 bg-white/20 h-20"></div>
-                <div class="text-yellow-400 text-6xl md:text-8xl font-black italic" id="percent-val">0.0%</div>
+            </div>
+            <div class="text-right">
+                <p class="text-slate-400 text-xs font-bold">TARGET: 06.19</p>
             </div>
         </div>
 
-        <div class="w-full max-w-sm mx-auto flex flex-col gap-6">
-            <div id="track" class="interactive">
-                <div id="runner-emoji">🏃‍♂️</div>
+        <div class="flex flex-col items-center">
+            <div class="flex items-center gap-4 bg-black/40 p-6 rounded-[3rem] backdrop-blur-md border border-white/10">
+                <div class="text-center">
+                    <span class="title-font text-8xl md:text-9xl leading-none" id="dist-text">0.0</span>
+                    <span class="text-xl text-slate-400 italic ml-1">km</span>
+                </div>
+                <div class="h-16 w-[2px] bg-white/20"></div>
+                <div class="text-yellow-400">
+                    <span class="text-6xl md:text-8xl font-black italic" id="percent-text">0.0%</span>
+                </div>
             </div>
-            <button onclick="openModal()" class="interactive w-full py-7 bg-yellow-400 text-black rounded-[2.5rem] font-black text-3xl shadow-2xl hover:scale-105 transition-transform active:scale-95">
+        </div>
+
+        <div class="w-full max-w-md mx-auto flex flex-col gap-4">
+            <div id="run-zone" class="interactive">
+                <div id="runner">🏃‍♂️</div>
+                <div class="ml-4 text-xs font-bold text-yellow-400/60 uppercase tracking-widest">Global Progress Track</div>
+            </div>
+            <button onclick="toggleModal('record', true)" class="interactive w-full py-6 bg-yellow-400 text-black rounded-[2rem] font-black text-3xl shadow-2xl active:scale-95 transition-transform">
                 기록 추가하기
-            </div>
+            </button>
         </div>
     </div>
 
-    <div id="magnifier" class="interactive"></div>
+    <div id="mag-wrap" class="interactive">
+        <div id="mag-canvas" style="width:100%; height:100%;"></div>
+    </div>
 
-    <div id="modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 p-6 backdrop-blur-xl">
-        <div class="bg-zinc-900 w-full max-w-xs p-8 rounded-[40px] border border-white/10 text-center">
-            <h3 class="title-font text-2xl text-yellow-400 mb-6">오늘 얼마나 걸었나요?</h3>
-            <input type="number" id="km-input" placeholder="0.0" class="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 text-4xl font-bold text-center text-white mb-6 focus:border-yellow-400 outline-none">
-            <div class="flex gap-3">
-                <button onclick="closeModal()" class="flex-1 py-4 text-slate-400 font-bold">취소</button>
-                <button onclick="saveRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">저장</button>
+    <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
+        <div class="interactive glass w-full max-w-sm p-10 rounded-[40px] text-white text-center">
+            <h3 class="title-font text-3xl mb-6 text-yellow-400">활동 기록</h3>
+            <div class="space-y-4 mb-8">
+                <input type="date" id="inputDate" class="w-full bg-white/10 border border-white/20 rounded-xl p-4 text-white">
+                <div class="relative">
+                    <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/10 border border-white/20 rounded-xl p-6 text-5xl font-bold text-center outline-none focus:border-yellow-400">
+                    <span class="absolute right-6 top-1/2 -translate-y-1/2 text-xl text-yellow-400 font-bold">km</span>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="toggleModal('record', false)" class="flex-1 py-4 text-slate-400">취소</button>
+                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-xl font-bold">저장</button>
             </div>
         </div>
     </div>
 
     <script>
-        let scene, camera, renderer, globe, marker, controls, zoomCamera;
-        let totalKm = parseFloat(localStorage.getItem('earth_walk_v9')) || 0;
-        const CIRCUM = 40075;
+        let scene, camera, zoomCamera, renderer, globe, marker, controls, pathTube, zoomLight;
+        let totalKm = parseFloat(localStorage.getItem('walk_earth_km_final')) || 0;
+        const EARTH_CIRCUMFERENCE = 40075;
+        const GLOBE_RADIUS = 2;
 
-        function init() {
+        function init3D() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 7;
 
-            // 확대 카메라
-            zoomCamera = new THREE.PerspectiveCamera(15, 1, 0.01, 20);
-
+            zoomCamera = new THREE.PerspectiveCamera(10, 1, 0.01, 20);
+            
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            // 조명 (지구가 절대 안 보이게 하지 않음)
-            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambient);
+            // 조명: 확대경이 어둡지 않게 엠비언트 라이트를 강화
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
             const sun = new THREE.DirectionalLight(0xffffff, 1);
             sun.position.set(5, 5, 5);
             scene.add(sun);
 
-            // 지구 생성 (텍스처 로드 실패해도 파란 구체로 보임)
-            const geo = new THREE.SphereGeometry(2, 64, 64);
-            const mat = new THREE.MeshPhongMaterial({ color: 0x1562ad });
-            globe = new THREE.Mesh(geo, mat);
+            // 마커용 전용 라이트
+            zoomLight = new THREE.PointLight(0xfff000, 2, 10);
+            scene.add(zoomLight);
+
+            // 지구
+            const textureLoader = new THREE.TextureLoader();
+            const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+            globe = new THREE.Mesh(
+                new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64),
+                new THREE.MeshPhongMaterial({ map: earthTexture })
+            );
+            globe.renderOrder = 0;
             scene.add(globe);
 
-            // 텍스처 입히기 (백그라운드에서 실행)
-            new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', (tex) => {
-                mat.map = tex;
-                mat.needsUpdate = true;
-            });
-
             // 마커
-            marker = new THREE.Mesh(
-                new THREE.SphereGeometry(0.05, 16, 16),
-                new THREE.MeshBasicMaterial({ color: 0xffff00 })
-            );
+            marker = new THREE.Group();
+            const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
+                color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending, depthTest: false
+            }));
+            glow.scale.set(0.5, 0.5, 1);
+            marker.add(glow);
+            marker.renderOrder = 2; // 지구보다 위에 렌더링
             scene.add(marker);
 
-            // 컨트롤
+            // 회전 컨트롤 (제대로 작동하도록 설정)
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.enableZoom = false;
+            controls.enableZoom = false; // 거리 고정
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
 
+            document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
             updateDDay();
-            updateUI(totalKm);
+            updateVisuals(totalKm);
             animate();
         }
 
         function updateDDay() {
-            const diff = Math.ceil((new Date(2026, 5, 19) - new Date()) / (1000*60*60*24));
-            document.getElementById('dday-val').innerText = `D-${diff > 0 ? diff : 0}`;
+            const today = new Date();
+            let dday = new Date(today.getFullYear(), 5, 19);
+            if (today > dday) dday.setFullYear(today.getFullYear() + 1);
+            const diff = Math.ceil((dday - today) / (1000 * 60 * 60 * 24));
+            document.getElementById('dday-text').innerText = `D-${diff}`;
         }
 
-        function updateUI(km) {
-            const ratio = Math.min(km / CIRCUM, 1);
-            document.getElementById('km-val').innerText = km.toFixed(1);
-            document.getElementById('percent-val').innerText = (ratio * 100).toFixed(1) + "%";
+        function updateVisuals(km) {
+            const ratio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
             
-            // 🏃‍♂️ 러너 이동
-            const trackWidth = document.getElementById('track').offsetWidth;
-            document.getElementById('runner-emoji').style.left = `${ratio * (trackWidth - 40)}px`;
+            // 궤적 업데이트
+            if (pathTube) scene.remove(pathTube);
+            const points = [];
+            const segments = Math.max(2, Math.floor(ratio * 1000));
+            for (let i = 0; i <= segments; i++) {
+                const pRatio = (i / segments) * ratio;
+                const angle = (Math.PI / 2) - (pRatio * Math.PI * 2);
+                points.push(new THREE.Vector3(Math.cos(angle) * 2.05, Math.sin(angle) * 2.05, 0));
+            }
 
-            // 마커 위치 계산
-            const angle = (km / CIRCUM) * Math.PI * 2;
-            marker.position.set(Math.sin(angle) * 2.05, Math.cos(angle) * 2.05, 0);
+            if (points.length > 1) {
+                const pathCurve = new THREE.CatmullRomCurve3(points);
+                const tubeGeo = new THREE.TubeGeometry(pathCurve, 512, 0.02, 8, false);
+                const tubeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, depthTest: false });
+                pathTube = new THREE.Mesh(tubeGeo, tubeMat);
+                pathTube.renderOrder = 1;
+                scene.add(pathTube);
 
-            // 확대경 카메라 추적
-            zoomCamera.position.copy(marker.position).multiplyScalar(1.5);
-            zoomCamera.lookAt(marker.position);
+                const lastPoint = points[points.length - 1];
+                marker.position.copy(lastPoint);
+                zoomLight.position.copy(lastPoint).multiplyScalar(1.2);
+                
+                // 확대 카메라 위치 설정
+                const normal = lastPoint.clone().normalize();
+                zoomCamera.position.copy(lastPoint.clone().add(normal.multiplyScalar(4)));
+                zoomCamera.lookAt(lastPoint);
+            }
+
+            // UI 텍스트 업데이트 (소수점 1자리)
+            document.getElementById('dist-text').innerText = km.toFixed(1);
+            document.getElementById('percent-text').innerText = (ratio * 100).toFixed(1) + "%";
+            
+            // 러너 위치 업데이트 (하단 바)
+            const runner = document.getElementById('runner');
+            runner.style.transform = `translateX(${ratio * 300}px)`;
         }
 
-        function openModal() { document.getElementById('modal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        function submitRecord() {
+            const kmInput = document.getElementById('inputKm');
+            let addedKm = parseFloat(kmInput.value) || 0;
+            if (addedKm <= 0) { toggleModal('record', false); return; }
 
-        function saveRecord() {
-            const val = parseFloat(document.getElementById('km-input').value);
-            if (val > 0) {
-                const start = totalKm;
-                totalKm += val;
-                localStorage.setItem('earth_walk_v9', totalKm);
-                
-                // 애니메이션 효과
-                gsap.to({v: start}, {
-                    v: totalKm,
-                    duration: 2,
-                    onUpdate: function() { updateUI(this.targets()[0].v); }
-                });
-                
-                document.getElementById('km-input').value = "";
-                closeModal();
-            }
+            const startKm = totalKm;
+            totalKm += addedKm;
+            localStorage.setItem('walk_earth_km_final', totalKm);
+            toggleModal('record', false);
+
+            document.getElementById('run-zone').classList.add('running');
+
+            gsap.to({ val: startKm }, {
+                val: totalKm,
+                duration: 3,
+                ease: "power2.out",
+                onUpdate: function() { updateVisuals(this.targets()[0].val); },
+                onComplete: () => {
+                    document.getElementById('run-zone').classList.remove('running');
+                    kmInput.value = "";
+                }
+            });
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            globe.rotation.y += 0.001;
             controls.update();
 
-            // 메인 뷰
+            // 메인 렌더링
             renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
             renderer.setScissorTest(false);
             renderer.render(scene, camera);
 
-            // 확대경 뷰
-            const mag = document.getElementById('magnifier');
-            const rect = mag.getBoundingClientRect();
+            // 확대경 렌더링
+            const magElem = document.getElementById('mag-wrap');
+            const rect = magElem.getBoundingClientRect();
+            const minX = rect.left;
+            const minY = window.innerHeight - rect.bottom;
+
             renderer.setScissorTest(true);
-            renderer.setScissor(rect.left, window.innerHeight - rect.bottom, rect.width, rect.height);
-            renderer.setViewport(rect.left, window.innerHeight - rect.bottom, rect.width, rect.height);
+            renderer.setScissor(minX, minY, rect.width, rect.height);
+            renderer.setViewport(minX, minY, rect.width, rect.height);
             renderer.render(scene, zoomCamera);
         }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        function toggleModal(id, show) { document.getElementById(id + '-modal').classList.toggle('hidden', !show); }
+        
+        window.addEventListener('resize', () => { 
+            camera.aspect = window.innerWidth / window.innerHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(window.innerWidth, window.innerHeight); 
         });
 
-        init();
+        init3D();
     </script>
 </body>
 </html>
