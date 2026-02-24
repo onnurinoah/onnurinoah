@@ -12,21 +12,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap'); 
         body { 
             margin: 0; 
-            background: url('countdown.jpg') no-repeat center center fixed; 
-            background-size: cover; 
+            background: #00050a; 
             color: white; 
             font-family: 'Pretendard', sans-serif; 
             overflow: hidden; 
             height: 100dvh; 
             touch-action: none; 
         } 
-        body::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 5, 10, 0.4);
-            z-index: 0;
-        }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; } 
         .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem 1.5rem; } 
         .interactive { pointer-events: auto; } 
@@ -101,7 +93,7 @@
 
     <div class="fixed bottom-6 left-6 z-30 interactive"> 
         <button id="test-btn" onclick="runMegaSimulation()" class="glass px-5 py-2.5 rounded-xl text-[10px] font-black text-white/40 border border-white/5 hover:text-yellow-400 hover:border-yellow-400/50 transition-all"> 
-            🔥 1000명 데이터 시뮬레이션 
+            🔥 테스트 데이터 주입
         </button> 
         <div id="test-status" class="hidden mt-2 p-2 bg-yellow-400 rounded-lg text-black font-black text-[9px] animate-bounce"> 
             SIMULATING: <span id="test-count">0</span> / 1,000 
@@ -151,24 +143,21 @@
         const GLOBE_RADIUS = 2; 
         const PATH_RADIUS = 2.15; 
         
-        let appData = JSON.parse(localStorage.getItem('earthChallenge_v11')) || {  
-            users: {}, totalKm: 0, totalGoal: 0 
-        }; 
-
-        let visualData = { totalKm: appData.totalKm, totalGoal: appData.totalGoal, personalDist: 0, personalTarget: 0 };
+        // 전역 데이터 객체
+        window.appData = { users: {}, totalKm: 0, totalGoal: 0 };
+        let visualData = { totalKm: 0, totalGoal: 0, personalDist: 0, personalTarget: 0 };
         let currentUserId = null; 
+        let currentUserName = "";
 
-        // [핵심] 검은 사각형 방지를 위한 프로그래밍 방식의 빛 텍스처 생성
         function createGlowTexture() {
             const canvas = document.createElement('canvas');
-            canvas.width = 128;
-            canvas.height = 128;
+            canvas.width = 128; canvas.height = 128;
             const ctx = canvas.getContext('2d');
             const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-            gradient.addColorStop(0, 'rgba(255, 220, 100, 1)'); // 중앙: 밝은 노랑
+            gradient.addColorStop(0, 'rgba(255, 220, 100, 1)');
             gradient.addColorStop(0.2, 'rgba(255, 180, 50, 0.8)');
             gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.3)');
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)'); // 끝: 완전 투명
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, 128, 128);
             return new THREE.CanvasTexture(canvas);
@@ -195,14 +184,9 @@
             ); 
             scene.add(globe); 
 
-            // 마커 생성 (이미지 로딩 대신 생성된 텍스처 사용)
             marker = new THREE.Group(); 
             const glowMat = new THREE.SpriteMaterial({ 
-                map: createGlowTexture(), 
-                transparent: true, 
-                blending: THREE.AdditiveBlending, // 검은색을 빛으로 처리하여 날려버림
-                depthWrite: false, 
-                depthTest: false 
+                map: createGlowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false 
             });
             const glow = new THREE.Sprite(glowMat); 
             glow.scale.set(1.5, 1.5, 1); 
@@ -211,10 +195,9 @@
 
             camera.position.z = 6; 
             controls = new THREE.OrbitControls(camera, renderer.domElement); 
-            controls.enableDamping = true; 
-            controls.enableZoom = false; 
+            controls.enableDamping = true; controls.enableZoom = false; 
 
-            updateDDay(); updateVisuals(true); animate(); 
+            updateDDay(); animate(); 
         } 
 
         function updateDDay() {
@@ -224,10 +207,11 @@
             document.getElementById('d-day-text').innerText = days > 0 ? `D-${days}` : (days === 0 ? "D-Day" : `D+${Math.abs(days)}`);
         }
 
-        function updateVisuals(immediate = false) { 
+        window.updateVisuals = function(immediate = false) { 
             const duration = immediate ? 0 : 2.5; 
             gsap.to(visualData, {
-                totalKm: appData.totalKm, totalGoal: appData.totalGoal,
+                totalKm: window.appData.totalKm, 
+                totalGoal: window.appData.totalGoal,
                 duration: duration, ease: "power2.out",
                 onUpdate: () => {
                     const globalRatio = visualData.totalGoal > 0 ? Math.min(visualData.totalKm / visualData.totalGoal, 1) : 0;
@@ -240,14 +224,16 @@
                     renderPath(visualData.totalKm);
                 }
             });
-            if (currentUserId && appData.users[currentUserId]) { 
-                const u = appData.users[currentUserId]; 
+
+            if (currentUserId && window.appData.users[currentUserId]) { 
+                const u = window.appData.users[currentUserId]; 
                 gsap.to(visualData, {
-                    personalDist: u.dist, personalTarget: u.target,
+                    personalDist: u.dist || 0, 
+                    personalTarget: u.target || 0,
                     duration: duration, ease: "power2.out",
                     onUpdate: () => {
                         const myRatio = visualData.personalTarget > 0 ? Math.min(visualData.personalDist / visualData.personalTarget, 1) : 0; 
-                        document.getElementById('my-dist-text').innerText = visualData.personalDist.toLocaleString(undefined, {minimumFractionDigits: 1}); 
+                        document.getElementById('my-dist-text').innerText = visualData.personalDist.toLocaleString(undefined, {minimumFractionDigits: 2}); 
                         document.getElementById('my-target-text').innerText = Math.floor(visualData.personalTarget).toLocaleString(); 
                         document.getElementById('my-percent-text').innerText = Math.floor(myRatio * 100) + "%"; 
                         document.getElementById('my-progress-bar').style.width = (myRatio * 100) + "%"; 
@@ -292,73 +278,133 @@
             const name = document.getElementById('loginName').value.trim(); 
             const phone = document.getElementById('loginPhone').value.trim(); 
             if(!name || phone.length < 4) return alert("정보를 정확히 입력해주세요."); 
-            currentUserId = `${name}_${phone}`; 
+            
+            currentUserId = phone;
+            currentUserName = name;
+            
+            // Firebase 구독 시작
+            window.subscribeUser(phone);
+            
             document.getElementById('login-modal').classList.add('hidden'); 
-            if (appData.users[currentUserId]) showRecordModal(); 
-            else document.getElementById('target-modal').classList.remove('hidden'); 
+            // 데이터 로딩 대기를 위해 약간의 지연 후 모달 전환
+            setTimeout(() => {
+                if (window.appData.users[currentUserId]) {
+                    showRecordModal(); 
+                } else {
+                    document.getElementById('target-modal').classList.remove('hidden'); 
+                }
+            }, 500);
         } 
 
-        function processTargetSetting() { 
+        async function processTargetSetting() { 
             const target = parseFloat(document.getElementById('targetInput').value); 
             if (!target || target <= 0) return alert("목표 거리를 입력해주세요."); 
-            appData.users[currentUserId] = { name: document.getElementById('loginName').value, target: target, dist: 0 }; 
-            appData.totalGoal += target;
+            
+            await window.firebaseSetTarget(currentUserId, currentUserName, target);
             document.getElementById('target-modal').classList.add('hidden'); 
             showRecordModal(); 
         } 
 
         function showRecordModal() { 
-            document.getElementById('modal-user-title').innerText = appData.users[currentUserId].name + "님"; 
+            const user = window.appData.users[currentUserId];
+            document.getElementById('modal-user-title').innerText = (user ? user.name : currentUserName) + "님"; 
             document.getElementById('record-modal').classList.remove('hidden'); 
-            updateVisuals(); 
+            window.updateVisuals(); 
         } 
 
-        function processSubmitRecord() { 
+        async function processSubmitRecord() { 
             const val = parseFloat(document.getElementById('inputKm').value); 
             if(!val || val <= 0) return alert("거리를 입력해주세요."); 
-            appData.users[currentUserId].dist += val; appData.totalKm += val; 
-            saveAndClose(); triggerSparkle();
+            
+            await window.firebaseAddRecord(currentUserId, val);
+            saveAndClose(); 
+            triggerSparkle();
         } 
 
         function saveAndClose() { 
-            localStorage.setItem('earthChallenge_v11', JSON.stringify(appData)); 
-            closeModals(); updateVisuals(); 
-            document.getElementById('inputKm').value = ''; document.getElementById('targetInput').value = '';
+            closeModals(); 
+            window.updateVisuals(); 
+            document.getElementById('inputKm').value = ''; 
+            document.getElementById('targetInput').value = '';
         } 
 
         function closeModals() { document.getElementById('modal-backdrop').classList.add('hidden'); } 
 
-        function runMegaSimulation() { 
-            const btn = document.getElementById('test-btn'); 
-            const status = document.getElementById('test-status'); 
-            const countDisplay = document.getElementById('test-count'); 
-            btn.disabled = true; status.classList.remove('hidden'); 
-            let count = 0; 
-            const timer = setInterval(() => { 
-                for(let i=0; i<10; i++) {
-                    count++; appData.totalGoal += (50 + Math.random() * 50); appData.totalKm += (1 + Math.random() * 24); 
-                } 
-                countDisplay.innerText = count; 
-                updateVisuals(); 
-                if (count >= 1000) { 
-                    clearInterval(timer); btn.disabled = false; status.classList.add('hidden'); 
-                    localStorage.setItem('earthChallenge_v11', JSON.stringify(appData)); 
-                    triggerSparkle();
-                } 
-            }, 50); 
-        } 
-
         function animate() { 
             requestAnimationFrame(animate); 
             if(globe) globe.rotation.y -= 0.0005; 
-            controls.update(); renderer.render(scene, camera); 
+            if(controls) controls.update(); 
+            if(renderer) renderer.render(scene, camera); 
         } 
 
         window.addEventListener('resize', () => { 
-            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); 
+            camera.aspect = window.innerWidth / window.innerHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(window.innerWidth, window.innerHeight); 
         }); 
 
         init3D(); 
     </script> 
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCT1SfWun7ZfOP3JVssXzGEiR-v7ZGPv18",
+            authDomain: "onnurinoah.firebaseapp.com",
+            databaseURL: "https://onnurinoah-default-rtdb.firebaseio.com",
+            projectId: "onnurinoah",
+            storageBucket: "onnurinoah.firebasestorage.app",
+            messagingSenderId: "462674776835",
+            appId: "1:462674776835:web:28a8dd67b798906f248f36",
+            measurementId: "G-FXW46XEVQP"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 전체 상태 실시간 감시
+        onValue(ref(db, "state"), snap => {
+            const data = snap.val();
+            if(!data) return;
+            window.appData.totalKm = data.totalKm || 0;
+            window.appData.totalGoal = data.totalGoal || 0;
+            window.updateVisuals?.();
+        });
+
+        // 사용자 데이터 구독 함수 (전역 노출)
+        window.subscribeUser = function(phone) {
+            onValue(ref(db, "users/" + phone), snap => {
+                const data = snap.val();
+                if(!data) return;
+                window.appData.users[phone] = data;
+                window.updateVisuals?.();
+            });
+        };
+
+        // 목표 설정 저장 함수 (전역 노출)
+        window.firebaseSetTarget = async function(phone, name, target) {
+            await update(ref(db, "users/" + phone), {
+                name: name,
+                target: target,
+                dist: 0
+            });
+            // 전체 목표 합산 업데이트 (트랜잭션)
+            await runTransaction(ref(db, "state/totalGoal"), cur => {
+                return (cur || 0) + target;
+            });
+        };
+
+        // 기록 추가 함수 (전역 노출 - 동시성 안전)
+        window.firebaseAddRecord = async function(phone, val) {
+            await runTransaction(ref(db, "users/" + phone + "/dist"), cur => {
+                return (cur || 0) + val;
+            });
+            await runTransaction(ref(db, "state/totalKm"), cur => {
+                return (cur || 0) + val;
+            });
+        };
+    </script>
 </body> 
 </html>
