@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 지구 원정대 v2.1</title>
+    <title>걸어서 지구 한바퀴</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://unpkg.com/three.meshline@1.4.0/src/THREE.MeshLine.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap');
@@ -27,7 +28,7 @@
 
     <div class="ui-overlay">
         <div class="text-center">
-            <p class="text-yellow-400 text-sm font-bold tracking-[0.4em] mb-2">EARTH EXPEDITION</p>
+            <p class="text-yellow-400 text-sm font-bold tracking-[0.2em] mb-2">걸어서 지구 한바퀴</p>
             <h1 class="title-font text-7xl md:text-9xl mb-4">
                 <span id="dist-text">0.00</span><span class="text-2xl text-slate-400 ml-2 font-sans">km</span>
             </h1>
@@ -81,10 +82,12 @@
             { text: "여호와를 앙망하는 자는 새 힘을 얻으리니", ref: "이사야 40:31" }
         ];
 
-        let scene, camera, renderer, globe, marker, controls, pathLine, sprite;
-        let totalKm = parseFloat(localStorage.getItem('earth3D_km_v2.1')) || 0;
+        let scene, camera, renderer, globe, marker, controls, meshLine, pathMesh;
+        let earthGroup, uiGroup; // 그룹 분리
+        let totalKm = parseFloat(localStorage.getItem('earth3D_km_v2.2')) || 0;
         const EARTH_CIRCUMFERENCE = 40075; 
         const GLOBE_RADIUS = 2;
+        const PATH_RADIUS = GLOBE_RADIUS + 0.2; // 궤적 반지름
 
         function init3D() {
             scene = new THREE.Scene();
@@ -100,6 +103,12 @@
             sunLight.position.set(10, 10, 10);
             scene.add(sunLight);
 
+            // 그룹 생성
+            earthGroup = new THREE.Group();
+            uiGroup = new THREE.Group();
+            scene.add(earthGroup);
+            scene.add(uiGroup);
+
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             
@@ -108,28 +117,33 @@
                 new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64), 
                 new THREE.MeshPhongMaterial({ map: earthTexture })
             );
-            scene.add(globe);
+            earthGroup.add(globe); // 지구는 earthGroup에 추가
 
-            // 빛의 마커 (크기 확대)
+            // 빛의 마커
             marker = new THREE.Group();
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({
                 map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
                 color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending
             }));
-            glow.scale.set(1.2, 1.2, 1); 
+            glow.scale.set(1.5, 1.5, 1); 
             marker.add(glow);
-            scene.add(marker);
+            uiGroup.add(marker); // 마커는 uiGroup에 추가 (고정)
 
-            // 궤적 선 (두께감을 위해 노란색 선명하게)
-            pathLine = new THREE.Line(
-                new THREE.BufferGeometry(), 
-                new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 5, transparent: true, opacity: 0.9 })
-            );
-            // 지구에 가려지지 않도록 렌더링 순서 조정
-            pathLine.renderOrder = 1; 
-            scene.add(pathLine);
+            // MeshLine을 이용한 두꺼운 궤적 선
+            meshLine = new THREE.MeshLine();
+            const pathMaterial = new THREE.MeshLineMaterial({
+                color: new THREE.Color(0xfacc15),
+                lineWidth: 0.15, // 선 두께 조절
+                transparent: true,
+                opacity: 0.9,
+                resolution: new THREE.Vector2(window.innerWidth, window.innerHeight) // 해상도 설정 필수
+            });
+            pathMesh = new THREE.Mesh(meshLine.geometry, pathMaterial);
+            pathMesh.renderOrder = 1; // 렌더링 순서 지정 (지구보다 나중에)
+            uiGroup.add(pathMesh); // 궤적은 uiGroup에 추가 (고정)
 
             camera.position.z = 5;
+            // OrbitControls 대상을 지구 그룹으로 제한
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.enableZoom = false;
@@ -144,15 +158,12 @@
             const ratio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
             const percent = (ratio * 100).toFixed(2);
             
-            // 12시 방향에서 시작하여 시계 방향으로 회전하는 각도 계산
-            // 0%일 때 90도(Math.PI/2)에서 시작하여 마이너스 방향으로 회전
             const angle = (Math.PI / 2) - (ratio * Math.PI * 2);
-            const displayRadius = GLOBE_RADIUS + 0.15; // 지구 표면에서 더 띄움
 
-            // 정면에서 잘 보이도록 X, Y 좌표 설정 (Z는 살짝 앞으로)
-            const x = displayRadius * Math.cos(angle);
-            const y = displayRadius * Math.sin(angle);
-            const z = 0.2; 
+            // 마커 위치 고정 (카메라 기준 정면)
+            const x = PATH_RADIUS * Math.cos(angle);
+            const y = PATH_RADIUS * Math.sin(angle);
+            const z = 0; // Z축 위치 고정
 
             marker.position.set(x, y, z);
 
@@ -163,12 +174,14 @@
                 const pRatio = (i / segments) * ratio;
                 const pAngle = (Math.PI / 2) - (pRatio * Math.PI * 2);
                 points.push(new THREE.Vector3(
-                    displayRadius * Math.cos(pAngle),
-                    displayRadius * Math.sin(pAngle),
-                    0.2
+                    PATH_RADIUS * Math.cos(pAngle),
+                    PATH_RADIUS * Math.sin(pAngle),
+                    0
                 ));
             }
-            pathLine.geometry.setFromPoints(points);
+            // MeshLine 지오메트리 업데이트
+            meshLine.setPoints(points);
+            pathMesh.geometry = meshLine.geometry; // 지오메트리 재할당 필요
 
             document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('percent-text').innerText = percent + "%";
@@ -182,7 +195,7 @@
 
             const startKm = totalKm;
             totalKm += addedKm;
-            localStorage.setItem('earth3D_km_v2.1', totalKm);
+            localStorage.setItem('earth3D_km_v2.2', totalKm); // 버전 업데이트
             toggleModal('record', false);
 
             gsap.to({ val: startKm }, {
@@ -198,6 +211,7 @@
             });
         }
 
+        // 모달 관련 함수들 (이전과 동일)
         function showBibleVerse() {
             const v = verses[Math.floor(Math.random() * verses.length)];
             document.getElementById('bible-text').innerText = v.text;
@@ -206,28 +220,30 @@
             modal.classList.remove('hidden');
             gsap.fromTo(modal, {opacity: 0, scale: 0.9}, {opacity: 1, scale: 1, duration: 0.5});
         }
-
         function closeBible() {
             gsap.to(document.getElementById('bible-modal'), {opacity: 0, duration: 0.3, onComplete: () => {
                 document.getElementById('bible-modal').classList.add('hidden');
             }});
         }
-
         function toggleModal(id, show) { 
             document.getElementById(id + '-modal').classList.toggle('hidden', !show); 
         }
 
         function animate() { 
             requestAnimationFrame(animate); 
-            if(globe) globe.rotation.y += 0.002; // 지구가 천천히 자전함
+            if(earthGroup) earthGroup.rotation.y += 0.002; // 지구 그룹만 회전
             if(controls) controls.update(); 
+            // MeshLineMaterial 해상도 업데이트
+            if (pathMesh && pathMesh.material) pathMesh.material.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
             renderer.render(scene, camera); 
         }
 
         window.addEventListener('resize', () => { 
             camera.aspect = window.innerWidth / window.innerHeight; 
             camera.updateProjectionMatrix(); 
-            renderer.setSize(window.innerWidth, window.innerHeight); 
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            // MeshLineMaterial 해상도 업데이트
+            if (pathMesh && pathMesh.material) pathMesh.material.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
         });
 
         init3D();
