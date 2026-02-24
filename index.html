@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://unpkg.com/three.meshline@1.4.0/src/THREE.MeshLine.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap');
@@ -18,8 +17,6 @@
         .interactive { pointer-events: auto; }
         .title-font { font-family: 'Black Han Sans', sans-serif; }
         .glass { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); }
-        
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
     </style>
 </head>
 <body>
@@ -28,13 +25,13 @@
 
     <div class="ui-overlay">
         <div class="text-center">
-            <p class="text-yellow-400 text-sm font-bold tracking-[0.2em] mb-2">걸어서 지구 한바퀴</p>
+            <p class="text-yellow-400 text-lg font-bold tracking-[0.2em] mb-2 title-font">걸어서 지구 한바퀴</p>
             <h1 class="title-font text-7xl md:text-9xl mb-4">
                 <span id="dist-text">0.00</span><span class="text-2xl text-slate-400 ml-2 font-sans">km</span>
             </h1>
-            <div class="inline-block px-6 py-2 rounded-full bg-yellow-400 text-black shadow-[0_0_20px_rgba(250,204,21,0.5)]">
-                <span id="percent-text" class="font-black text-3xl">0.00%</span>
-                <span class="font-bold text-sm ml-1 uppercase">Completed</span>
+            <div class="inline-block px-8 py-3 rounded-full bg-yellow-400 text-black shadow-[0_0_30px_rgba(250,204,21,0.6)]">
+                <span id="percent-text" class="font-black text-4xl">0.00%</span>
+                <span class="font-bold text-sm ml-1 uppercase">달성</span>
             </div>
         </div>
 
@@ -46,16 +43,16 @@
     </div>
 
     <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
-        <div class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white">
+        <div class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center">
             <h3 class="title-font text-3xl mb-8 text-yellow-400">활동 기록</h3>
             <div class="space-y-6">
                 <div>
-                    <label class="text-xs text-slate-400 ml-1 mb-2 block uppercase tracking-widest">Select Date</label>
-                    <input type="date" id="inputDate" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-lg font-bold">
+                    <label class="text-xs text-slate-400 mb-2 block uppercase tracking-widest">날짜 선택</label>
+                    <input type="date" id="inputDate" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-lg font-bold text-white">
                 </div>
                 <div>
-                    <label class="text-xs text-slate-400 ml-1 mb-2 block uppercase tracking-widest">Distance (KM)</label>
-                    <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/10 border border-white/20 rounded-2xl p-5 outline-none focus:border-yellow-400 text-4xl font-bold">
+                    <label class="text-xs text-slate-400 mb-2 block uppercase tracking-widest">이동 거리 (KM)</label>
+                    <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/10 border border-white/20 rounded-2xl p-5 outline-none focus:border-yellow-400 text-4xl font-bold text-white text-center">
                 </div>
             </div>
             <div class="flex gap-4 mt-10">
@@ -74,76 +71,49 @@
     </div>
 
     <script>
-        const verses = [
-            { text: "이기기를 다투는 자마다 모든 일에 절제하나니", ref: "고린도전서 9:25" },
-            { text: "내가 선한 싸움을 싸우고 나의 달려갈 길을 마쳤으니", ref: "디모데후서 4:7" },
-            { text: "푯대를 향하여 그리스도 예수 안에서 달려가노라", ref: "빌립보서 3:14" },
-            { text: "인내로써 우리 앞에 당한 경주를 하며", ref: "히브리서 12:1" },
-            { text: "여호와를 앙망하는 자는 새 힘을 얻으리니", ref: "이사야 40:31" }
-        ];
-
-        let scene, camera, renderer, globe, marker, controls, meshLine, pathMesh;
-        let earthGroup, uiGroup; // 그룹 분리
-        let totalKm = parseFloat(localStorage.getItem('earth3D_km_v2.2')) || 0;
+        let scene, camera, renderer, globe, marker, controls, pathTube;
+        let totalKm = parseFloat(localStorage.getItem('walk_earth_km')) || 0;
         const EARTH_CIRCUMFERENCE = 40075; 
         const GLOBE_RADIUS = 2;
-        const PATH_RADIUS = GLOBE_RADIUS + 0.2; // 궤적 반지름
+        const PATH_RADIUS = 2.3; // 지구보다 조금 더 큰 궤적 반지름
 
         function init3D() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(window.devicePixelRatio);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            // 조명
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
-            const sunLight = new THREE.PointLight(0xffffff, 1.5);
-            sunLight.position.set(10, 10, 10);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+            sunLight.position.set(5, 5, 5);
             scene.add(sunLight);
 
-            // 그룹 생성
-            earthGroup = new THREE.Group();
-            uiGroup = new THREE.Group();
-            scene.add(earthGroup);
-            scene.add(uiGroup);
-
+            // 지구 생성
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
-            
-            // 지구
             globe = new THREE.Mesh(
                 new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64), 
                 new THREE.MeshPhongMaterial({ map: earthTexture })
             );
-            earthGroup.add(globe); // 지구는 earthGroup에 추가
+            scene.add(globe);
 
-            // 빛의 마커
+            // 빛의 마커 (고정 그룹)
             marker = new THREE.Group();
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({
                 map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
                 color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending
             }));
-            glow.scale.set(1.5, 1.5, 1); 
+            glow.scale.set(1.5, 1.5, 1);
             marker.add(glow);
-            uiGroup.add(marker); // 마커는 uiGroup에 추가 (고정)
+            scene.add(marker);
 
-            // MeshLine을 이용한 두꺼운 궤적 선
-            meshLine = new THREE.MeshLine();
-            const pathMaterial = new THREE.MeshLineMaterial({
-                color: new THREE.Color(0xfacc15),
-                lineWidth: 0.15, // 선 두께 조절
-                transparent: true,
-                opacity: 0.9,
-                resolution: new THREE.Vector2(window.innerWidth, window.innerHeight) // 해상도 설정 필수
-            });
-            pathMesh = new THREE.Mesh(meshLine.geometry, pathMaterial);
-            pathMesh.renderOrder = 1; // 렌더링 순서 지정 (지구보다 나중에)
-            uiGroup.add(pathMesh); // 궤적은 uiGroup에 추가 (고정)
-
-            camera.position.z = 5;
-            // OrbitControls 대상을 지구 그룹으로 제한
+            camera.position.z = 6;
+            
+            // 지구만 회전시키기 위한 OrbitControls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.enableZoom = false;
@@ -158,30 +128,32 @@
             const ratio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
             const percent = (ratio * 100).toFixed(2);
             
-            const angle = (Math.PI / 2) - (ratio * Math.PI * 2);
+            // 궤적 포인트 생성 (시계 방향, 12시 시작)
+            if (pathTube) scene.remove(pathTube);
+            
+            if (ratio > 0) {
+                const points = [];
+                const segments = Math.max(2, Math.floor(ratio * 100));
+                for (let i = 0; i <= segments; i++) {
+                    const pRatio = (i / segments) * ratio;
+                    const angle = (Math.PI / 2) - (pRatio * Math.PI * 2);
+                    points.push(new THREE.Vector3(Math.cos(angle) * PATH_RADIUS, Math.sin(angle) * PATH_RADIUS, 0));
+                }
 
-            // 마커 위치 고정 (카메라 기준 정면)
-            const x = PATH_RADIUS * Math.cos(angle);
-            const y = PATH_RADIUS * Math.sin(angle);
-            const z = 0; // Z축 위치 고정
+                const pathCurve = new THREE.CatmullRomCurve3(points);
+                // TubeGeometry(경로, 세그먼트, 반경(굵기), 원형절단면세그먼트, 닫힘여부)
+                const tubeGeo = new THREE.TubeGeometry(pathCurve, 100, 0.06, 8, false);
+                const tubeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+                pathTube = new THREE.Mesh(tubeGeo, tubeMat);
+                scene.add(pathTube);
 
-            marker.position.set(x, y, z);
-
-            // 궤적 포인트 생성
-            const points = [];
-            const segments = Math.max(2, Math.floor(ratio * 200)); 
-            for (let i = 0; i <= segments; i++) {
-                const pRatio = (i / segments) * ratio;
-                const pAngle = (Math.PI / 2) - (pRatio * Math.PI * 2);
-                points.push(new THREE.Vector3(
-                    PATH_RADIUS * Math.cos(pAngle),
-                    PATH_RADIUS * Math.sin(pAngle),
-                    0
-                ));
+                // 마커 위치 업데이트
+                const lastPoint = points[points.length - 1];
+                marker.position.copy(lastPoint);
+                marker.visible = true;
+            } else {
+                marker.position.set(0, PATH_RADIUS, 0); // 0일 때 12시 방향
             }
-            // MeshLine 지오메트리 업데이트
-            meshLine.setPoints(points);
-            pathMesh.geometry = meshLine.geometry; // 지오메트리 재할당 필요
 
             document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('percent-text').innerText = percent + "%";
@@ -195,55 +167,53 @@
 
             const startKm = totalKm;
             totalKm += addedKm;
-            localStorage.setItem('earth3D_km_v2.2', totalKm); // 버전 업데이트
+            localStorage.setItem('walk_earth_km', totalKm);
             toggleModal('record', false);
 
             gsap.to({ val: startKm }, {
                 val: totalKm,
-                duration: 2.5,
+                duration: 2,
                 ease: "power2.out",
                 onUpdate: function() { updateVisuals(this.targets()[0].val); },
                 onComplete: () => {
                     gsap.fromTo(marker.scale, {x:1, y:1}, {x:2.5, y:2.5, duration: 0.4, yoyo:true, repeat:1});
-                    setTimeout(showBibleVerse, 800);
+                    setTimeout(showBibleVerse, 600);
                     kmInput.value = "";
                 }
             });
         }
 
-        // 모달 관련 함수들 (이전과 동일)
         function showBibleVerse() {
+            const verses = [
+                { text: "이기기를 다투는 자마다 모든 일에 절제하나니", ref: "고린도전서 9:25" },
+                { text: "내가 선한 싸움을 싸우고 나의 달려갈 길을 마쳤으니", ref: "디모데후서 4:7" },
+                { text: "푯대를 향하여 그리스도 예수 안에서 달려가노라", ref: "빌립보서 3:14" },
+                { text: "인내로써 우리 앞에 당한 경주를 하며", ref: "히브리서 12:1" }
+            ];
             const v = verses[Math.floor(Math.random() * verses.length)];
             document.getElementById('bible-text').innerText = v.text;
             document.getElementById('bible-ref').innerText = v.ref;
-            const modal = document.getElementById('bible-modal');
-            modal.classList.remove('hidden');
-            gsap.fromTo(modal, {opacity: 0, scale: 0.9}, {opacity: 1, scale: 1, duration: 0.5});
+            document.getElementById('bible-modal').classList.remove('hidden');
         }
-        function closeBible() {
-            gsap.to(document.getElementById('bible-modal'), {opacity: 0, duration: 0.3, onComplete: () => {
-                document.getElementById('bible-modal').classList.add('hidden');
-            }});
-        }
-        function toggleModal(id, show) { 
-            document.getElementById(id + '-modal').classList.toggle('hidden', !show); 
-        }
+
+        function closeBible() { document.getElementById('bible-modal').classList.add('hidden'); }
+        function toggleModal(id, show) { document.getElementById(id + '-modal').classList.toggle('hidden', !show); }
 
         function animate() { 
             requestAnimationFrame(animate); 
-            if(earthGroup) earthGroup.rotation.y += 0.002; // 지구 그룹만 회전
-            if(controls) controls.update(); 
-            // MeshLineMaterial 해상도 업데이트
-            if (pathMesh && pathMesh.material) pathMesh.material.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+            if(globe) globe.rotation.y += 0.001; // 지구가 스스로 자전
+            
+            // 궤적과 마커가 항상 카메라를 향하게 하거나 혹은 고정된 평면에 있도록 처리
+            // 여기서는 고정된 평면(Z=0)에 두었으므로 OrbitControls로 카메라를 돌려도 지구만 입체적으로 보이고 궤적은 제자리에 있습니다.
+            
+            controls.update(); 
             renderer.render(scene, camera); 
         }
 
         window.addEventListener('resize', () => { 
             camera.aspect = window.innerWidth / window.innerHeight; 
             camera.updateProjectionMatrix(); 
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            // MeshLineMaterial 해상도 업데이트
-            if (pathMesh && pathMesh.material) pathMesh.material.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth, window.innerHeight); 
         });
 
         init3D();
