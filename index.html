@@ -10,12 +10,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script> 
     <style> 
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap'); 
-        body { margin: 0; background: #00050a; color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; height: 100dvh; touch-action: none; } 
+        body { 
+            margin: 0; 
+            background: url('countdown.jpg') no-repeat center center fixed; 
+            background-size: cover; 
+            color: white; 
+            font-family: 'Pretendard', sans-serif; 
+            overflow: hidden; 
+            height: 100dvh; 
+            touch-action: none; 
+        } 
+        /* 배경이 어두울 경우 대비를 위해 오버레이 추가 */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 5, 10, 0.4);
+            z-index: 0;
+        }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; } 
         .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem 1.5rem; } 
         .interactive { pointer-events: auto; } 
         .title-font { font-family: 'Black Han Sans', sans-serif; } 
-        .glass { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15); } 
+        .glass { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); } 
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; } 
     </style> 
 </head> 
@@ -23,27 +40,33 @@
 
     <div id="canvas-container"></div> 
 
-    <div id="personal-stat-card" class="fixed top-6 left-6 z-20 opacity-0 transform -translate-x-10 transition-all duration-500"> 
-        <div class="glass p-5 rounded-3xl border-l-4 border-l-yellow-400"> 
-            <p id="user-display-name" class="text-yellow-400 font-black text-[10px] tracking-widest mb-2 uppercase">MY CHALLENGE</p> 
-            <div class="space-y-1"> 
-                <div class="flex items-baseline gap-2"> 
-                    <span id="my-dist-text" class="title-font text-2xl">0.00</span> 
-                    <span class="text-[10px] text-slate-400">/ <span id="my-target-text">0</span> km</span> 
-                </div> 
-                <div class="flex items-center gap-3"> 
-                    <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden"> 
-                        <div id="my-progress-bar" class="h-full bg-yellow-400 transition-all duration-700" style="width: 0%"></div> 
+    <div class="fixed top-6 left-6 z-20">
+        <div class="glass px-6 py-3 rounded-2xl border-l-4 border-l-red-500">
+            <p class="text-[10px] text-red-400 font-bold tracking-widest mb-0.5">CHALLENGE END</p>
+            <div id="d-day-text" class="title-font text-4xl text-white italic">D-00</div>
+        </div>
+    </div>
+
+    <div class="fixed top-6 right-6 z-20 flex flex-col items-end gap-3"> 
+        <div id="personal-stat-card" class="opacity-0 transform translate-x-10 transition-all duration-700"> 
+            <div class="glass p-4 rounded-2xl border-r-4 border-r-yellow-400 text-right"> 
+                <p class="text-yellow-400 font-black text-[10px] tracking-widest mb-1 uppercase">내 기록</p> 
+                <div class="space-y-1"> 
+                    <div class="flex items-baseline justify-end gap-2"> 
+                        <span id="my-dist-text" class="title-font text-2xl">0.00</span> 
+                        <span class="text-[10px] text-slate-400">/ <span id="my-target-text">0</span> km</span> 
                     </div> 
-                    <span id="my-percent-text" class="text-xs font-black text-yellow-400 italic">0%</span> 
+                    <div class="flex items-center justify-end gap-3"> 
+                        <span id="my-percent-text" class="text-xs font-black text-yellow-400 italic">0%</span> 
+                        <div class="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden"> 
+                            <div id="my-progress-bar" class="h-full bg-yellow-400" style="width: 0%"></div> 
+                        </div> 
+                    </div> 
                 </div> 
             </div> 
         </div> 
-    </div> 
-
-    <div class="fixed top-6 right-6 z-20 text-right"> 
-        <div class="glass p-4 rounded-2xl"> 
-            <p class="text-[9px] text-yellow-400/70 font-bold tracking-widest mb-1">CUMULATIVE TARGET</p> 
+        <div class="glass p-4 rounded-2xl text-right"> 
+            <p class="text-[9px] text-yellow-400/70 font-bold tracking-widest mb-1">누적 목표기록</p> 
             <div id="global-target-display" class="title-font text-xl text-white italic">0 km</div> 
         </div> 
     </div> 
@@ -82,7 +105,6 @@
     </div> 
 
     <div id="modal-backdrop" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"> 
-        
         <div id="login-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center"> 
             <h3 class="title-font text-3xl mb-8 text-yellow-400">본인 확인</h3> 
             <div class="space-y-4"> 
@@ -97,7 +119,7 @@
 
         <div id="target-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden"> 
             <h3 class="title-font text-2xl mb-2 text-yellow-400">목표 설정</h3> 
-            <p class="text-slate-400 text-[10px] mb-8 uppercase tracking-widest font-bold">당신의 도전 목표 거리를 입력하세요</p> 
+            <p class="text-slate-400 text-[10px] mb-8 uppercase tracking-widest font-bold">도전 목표 거리를 입력하세요</p> 
             <div class="relative mb-10">
                 <input type="number" id="targetInput" placeholder="0" class="w-full bg-transparent border-b-2 border-yellow-400 outline-none text-5xl font-black text-center text-yellow-400 p-2"> 
                 <span class="absolute right-0 bottom-2 text-yellow-400 font-bold">km</span>
@@ -125,11 +147,20 @@
         const GLOBE_RADIUS = 2; 
         const PATH_RADIUS = 2.15; 
         
-        let appData = JSON.parse(localStorage.getItem('earthChallenge_v6')) || {  
+        let appData = JSON.parse(localStorage.getItem('earthChallenge_v7')) || {  
             users: {},  
             totalKm: 0, 
             totalGoal: 0 
         }; 
+
+        // 애니메이션을 위한 보간 값 객체
+        let visualData = {
+            totalKm: appData.totalKm,
+            totalGoal: appData.totalGoal,
+            personalDist: 0,
+            personalTarget: 0
+        };
+
         let currentUserId = null; 
 
         function init3D() { 
@@ -166,36 +197,66 @@
             controls.enableDamping = true; 
             controls.enableZoom = false; 
 
-            updateVisuals(); 
+            updateDDay();
+            updateVisuals(true); // 초기 로드
             animate(); 
         } 
 
-        function updateVisuals() { 
-            // 누적 달성률 (지구 한바퀴 기준이 아니라 전체 누적 목표 대비 달성량으로 계산)
-            const globalRatio = appData.totalGoal > 0 ? Math.min(appData.totalKm / appData.totalGoal, 1) : 0; 
-            
-            // 1. 전체 디스플레이 업데이트
-            document.getElementById('dist-text').innerText = appData.totalKm.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}); 
-            document.getElementById('percent-text').innerText = (globalRatio * 100).toFixed(2) + "%"; 
-            document.getElementById('global-progress-bar').style.width = (globalRatio * 100) + "%"; 
-            document.getElementById('global-target-display').innerText = Math.floor(appData.totalGoal).toLocaleString() + " km"; 
+        // D-Day 계산
+        function updateDDay() {
+            const target = new Date('2026-06-19T00:00:00');
+            const now = new Date();
+            const diff = target - now;
+            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('d-day-text').innerText = days > 0 ? `D-${days}` : (days === 0 ? "D-Day" : `D+${Math.abs(days)}`);
+        }
 
-            // 2. 개인 디스플레이 업데이트
+        // 시각적 업데이트 (GSAP 애니메이션 적용)
+        function updateVisuals(immediate = false) { 
+            const duration = immediate ? 0 : 1.5;
+
+            // 1. 전체 데이터 애니메이션
+            gsap.to(visualData, {
+                totalKm: appData.totalKm,
+                totalGoal: appData.totalGoal,
+                duration: duration,
+                ease: "power2.out",
+                onUpdate: () => {
+                    const globalRatio = visualData.totalGoal > 0 ? Math.min(visualData.totalKm / visualData.totalGoal, 1) : 0;
+                    document.getElementById('dist-text').innerText = visualData.totalKm.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}); 
+                    document.getElementById('percent-text').innerText = (globalRatio * 100).toFixed(2) + "%"; 
+                    document.getElementById('global-progress-bar').style.width = (globalRatio * 100) + "%"; 
+                    document.getElementById('global-target-display').innerText = Math.floor(visualData.totalGoal).toLocaleString() + " km"; 
+                    
+                    // 3D 궤적 업데이트 (지구 둘레 기준 시각화)
+                    renderPath(visualData.totalKm);
+                }
+            });
+
+            // 2. 개인 데이터 애니메이션
             if (currentUserId && appData.users[currentUserId]) { 
                 const u = appData.users[currentUserId]; 
-                const myRatio = u.target > 0 ? Math.min(u.dist / u.target, 1) : 0; 
-                document.getElementById('my-dist-text').innerText = u.dist.toLocaleString(undefined, {minimumFractionDigits: 1}); 
-                document.getElementById('my-target-text').innerText = u.target.toLocaleString(); 
-                document.getElementById('my-percent-text').innerText = Math.floor(myRatio * 100) + "%"; 
-                document.getElementById('my-progress-bar').style.width = (myRatio * 100) + "%"; 
-                
-                const card = document.getElementById('personal-stat-card'); 
-                card.style.opacity = "1"; 
-                card.style.transform = "translateX(0)"; 
-            } 
+                gsap.to(visualData, {
+                    personalDist: u.dist,
+                    personalTarget: u.target,
+                    duration: duration,
+                    ease: "power2.out",
+                    onUpdate: () => {
+                        const myRatio = visualData.personalTarget > 0 ? Math.min(visualData.personalDist / visualData.personalTarget, 1) : 0; 
+                        document.getElementById('my-dist-text').innerText = visualData.personalDist.toLocaleString(undefined, {minimumFractionDigits: 1}); 
+                        document.getElementById('my-target-text').innerText = Math.floor(visualData.personalTarget).toLocaleString(); 
+                        document.getElementById('my-percent-text').innerText = Math.floor(myRatio * 100) + "%"; 
+                        document.getElementById('my-progress-bar').style.width = (myRatio * 100) + "%"; 
+                    }
+                });
 
-            // 3. 3D 궤적 (지구 둘레 40075km 대비 현재 총 이동거리 시각화)
-            const earthRatio = Math.min(appData.totalKm / EARTH_CIRCUMFERENCE, 1);
+                const card = document.getElementById('personal-stat-card'); 
+                card.classList.remove('opacity-0', 'translate-x-10');
+            } 
+        } 
+
+        function renderPath(km) {
+            const earthRatio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
             if (pathTube) { scene.remove(pathTube); pathTube.geometry.dispose(); pathTube.material.dispose(); } 
             if (earthRatio > 0) { 
                 const points = []; 
@@ -212,9 +273,9 @@
                 scene.add(pathTube); 
                 marker.position.copy(points[points.length - 1]); 
             } 
-        } 
+        }
 
-        // --- 모달 로직 ---
+        // --- 기존 모달 로직 유지 ---
         function openLoginModal() { 
             document.getElementById('modal-backdrop').classList.remove('hidden'); 
             document.getElementById('login-modal').classList.remove('hidden'); 
@@ -226,32 +287,17 @@
             const name = document.getElementById('loginName').value.trim(); 
             const phone = document.getElementById('loginPhone').value.trim(); 
             if(!name || phone.length < 4) return alert("정보를 정확히 입력해주세요."); 
-
             currentUserId = `${name}_${phone}`; 
-            
             document.getElementById('login-modal').classList.add('hidden'); 
-            
-            if (appData.users[currentUserId]) { 
-                // 기존 유저 -> 바로 기록창으로
-                showRecordModal(); 
-            } else { 
-                // 신규 유저 -> 목표 설정창으로
-                document.getElementById('target-modal').classList.remove('hidden'); 
-            } 
+            if (appData.users[currentUserId]) { showRecordModal(); } 
+            else { document.getElementById('target-modal').classList.remove('hidden'); } 
         } 
 
         function processTargetSetting() { 
             const target = parseFloat(document.getElementById('targetInput').value); 
             if (!target || target <= 0) return alert("목표 거리를 입력해주세요."); 
-
-            // 데이터 생성 및 누적 목표에 합산
-            appData.users[currentUserId] = { 
-                name: document.getElementById('loginName').value, 
-                target: target, 
-                dist: 0 
-            }; 
+            appData.users[currentUserId] = { name: document.getElementById('loginName').value, target: target, dist: 0 }; 
             appData.totalGoal += target;
-            
             document.getElementById('target-modal').classList.add('hidden'); 
             showRecordModal(); 
         } 
@@ -265,56 +311,43 @@
         function processSubmitRecord() { 
             const val = parseFloat(document.getElementById('inputKm').value); 
             if(!val || val <= 0) return alert("거리를 입력해주세요."); 
-
             appData.users[currentUserId].dist += val; 
             appData.totalKm += val; 
-            
             saveAndClose(); 
         } 
 
         function saveAndClose() { 
-            localStorage.setItem('earthChallenge_v6', JSON.stringify(appData)); 
+            localStorage.setItem('earthChallenge_v7', JSON.stringify(appData)); 
             closeModals(); 
             updateVisuals(); 
-            // 입력 필드 초기화
             document.getElementById('inputKm').value = '';
             document.getElementById('targetInput').value = '';
         } 
 
-        function closeModals() { 
-            document.getElementById('modal-backdrop').classList.add('hidden'); 
-        } 
+        function closeModals() { document.getElementById('modal-backdrop').classList.add('hidden'); } 
 
-        // --- 시뮬레이션: 1000명 목표 및 달성 데이터 개별 합산 ---
         function runMegaSimulation() { 
             const btn = document.getElementById('test-btn'); 
             const status = document.getElementById('test-status'); 
             const countDisplay = document.getElementById('test-count'); 
-            
             btn.disabled = true; 
             status.classList.remove('hidden'); 
-            
             let count = 0; 
             const timer = setInterval(() => { 
-                for(let i=0; i<10; i++) { // 속도를 위해 한번에 10명씩
+                for(let i=0; i<10; i++) {
                     count++; 
-                    const simTarget = 50 + Math.random() * 50; // 목표 50~100km
-                    const simDist = 1 + Math.random() * 24;    // 달성 1~25km
-                    
-                    appData.totalGoal += simTarget; 
-                    appData.totalKm += simDist; 
+                    appData.totalGoal += (50 + Math.random() * 50); 
+                    appData.totalKm += (1 + Math.random() * 24); 
                 } 
-
                 countDisplay.innerText = count; 
-                updateVisuals(); 
-
+                updateVisuals(); // GSAP가 내부적으로 부드럽게 처리함
                 if (count >= 1000) { 
                     clearInterval(timer); 
                     btn.disabled = false; 
                     status.classList.add('hidden'); 
-                    localStorage.setItem('earthChallenge_v6', JSON.stringify(appData)); 
+                    localStorage.setItem('earthChallenge_v7', JSON.stringify(appData)); 
                 } 
-            }, 20); 
+            }, 50); 
         } 
 
         function animate() { 
