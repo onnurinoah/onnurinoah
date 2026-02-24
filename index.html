@@ -20,7 +20,6 @@
             height: 100dvh; 
             touch-action: none; 
         } 
-        /* 배경이 어두울 경우 대비를 위해 오버레이 추가 */
         body::before {
             content: "";
             position: absolute;
@@ -42,7 +41,7 @@
 
     <div class="fixed top-6 left-6 z-20">
         <div class="glass px-6 py-3 rounded-2xl border-l-4 border-l-red-500">
-            <p class="text-[10px] text-red-400 font-bold tracking-widest mb-0.5">CHALLENGE END</p>
+            <p class="text-[10px] text-red-400 font-bold tracking-widest mb-0.5">COUNTDOWN</p>
             <div id="d-day-text" class="title-font text-4xl text-white italic">D-00</div>
         </div>
     </div>
@@ -66,7 +65,7 @@
             </div> 
         </div> 
         <div class="glass p-4 rounded-2xl text-right"> 
-            <p class="text-[9px] text-yellow-400/70 font-bold tracking-widest mb-1">누적 목표기록</p> 
+            <p class="text-[9px] text-yellow-400/70 font-bold tracking-widest mb-1">전체 목표기록</p> 
             <div id="global-target-display" class="title-font text-xl text-white italic">0 km</div> 
         </div> 
     </div> 
@@ -82,7 +81,10 @@
 
     <div class="ui-overlay"> 
         <div class="text-center pt-10"> 
-            <p class="text-yellow-400 text-xs font-bold tracking-[0.4em] mb-2 title-font">CUMULATIVE DISTANCE</p> 
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <p class="text-yellow-400 text-xs font-bold tracking-[0.4em] title-font">누적 거리</p>
+                <span class="text-[9px] text-white/40 font-bold">(지구 둘레 40,075km)</span>
+            </div>
             <div class="flex flex-col items-center"> 
                 <div class="flex items-baseline"> 
                     <h1 id="dist-text" class="title-font text-7xl md:text-9xl tracking-tighter">0.00</h1> 
@@ -129,7 +131,7 @@
 
         <div id="record-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden"> 
             <h3 id="modal-user-title" class="title-font text-3xl mb-1 text-yellow-400">사용자님</h3> 
-            <p class="text-slate-500 text-[10px] mb-8 uppercase tracking-widest font-bold italic">오늘 얼마나 걸으셨나요?</p> 
+            <p class="text-slate-500 text-[10px] mb-8 uppercase tracking-widest font-bold italic">얼마나 걷거나 뛰셨나요?</p> 
             <div class="relative mb-10">
                 <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-transparent border-b-2 border-yellow-400 outline-none text-6xl font-black text-center text-yellow-400 p-2"> 
                 <span class="absolute right-0 bottom-2 text-yellow-400 font-bold text-xl">km</span>
@@ -147,13 +149,12 @@
         const GLOBE_RADIUS = 2; 
         const PATH_RADIUS = 2.15; 
         
-        let appData = JSON.parse(localStorage.getItem('earthChallenge_v7')) || {  
+        let appData = JSON.parse(localStorage.getItem('earthChallenge_v8')) || {  
             users: {},  
             totalKm: 0, 
             totalGoal: 0 
         }; 
 
-        // 애니메이션을 위한 보간 값 객체
         let visualData = {
             totalKm: appData.totalKm,
             totalGoal: appData.totalGoal,
@@ -184,11 +185,17 @@
             ); 
             scene.add(globe); 
 
+            // 끝지점 마커(빛) 설정 개선
             marker = new THREE.Group(); 
+            const markerTexture = textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png');
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({ 
-                map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'), 
-                color: 0xffcc00, transparent: true, blending: THREE.AdditiveBlending 
+                map: markerTexture, 
+                color: 0xffcc00, 
+                transparent: true, 
+                blending: THREE.AdditiveBlending,
+                depthWrite: false // 검은 테두리/사각형 방지 핵심 설정
             })); 
+            glow.scale.set(0.8, 0.8, 1); // 마커 자체 크기 조정
             marker.add(glow); 
             scene.add(marker); 
 
@@ -198,11 +205,10 @@
             controls.enableZoom = false; 
 
             updateDDay();
-            updateVisuals(true); // 초기 로드
+            updateVisuals(true); 
             animate(); 
         } 
 
-        // D-Day 계산
         function updateDDay() {
             const target = new Date('2026-06-19T00:00:00');
             const now = new Date();
@@ -211,11 +217,9 @@
             document.getElementById('d-day-text').innerText = days > 0 ? `D-${days}` : (days === 0 ? "D-Day" : `D+${Math.abs(days)}`);
         }
 
-        // 시각적 업데이트 (GSAP 애니메이션 적용)
         function updateVisuals(immediate = false) { 
-            const duration = immediate ? 0 : 1.5;
+            const duration = immediate ? 0 : 2; // 게이지 차오르는 속도
 
-            // 1. 전체 데이터 애니메이션
             gsap.to(visualData, {
                 totalKm: appData.totalKm,
                 totalGoal: appData.totalGoal,
@@ -227,13 +231,10 @@
                     document.getElementById('percent-text').innerText = (globalRatio * 100).toFixed(2) + "%"; 
                     document.getElementById('global-progress-bar').style.width = (globalRatio * 100) + "%"; 
                     document.getElementById('global-target-display').innerText = Math.floor(visualData.totalGoal).toLocaleString() + " km"; 
-                    
-                    // 3D 궤적 업데이트 (지구 둘레 기준 시각화)
                     renderPath(visualData.totalKm);
                 }
             });
 
-            // 2. 개인 데이터 애니메이션
             if (currentUserId && appData.users[currentUserId]) { 
                 const u = appData.users[currentUserId]; 
                 gsap.to(visualData, {
@@ -249,12 +250,11 @@
                         document.getElementById('my-progress-bar').style.width = (myRatio * 100) + "%"; 
                     }
                 });
-
-                const card = document.getElementById('personal-stat-card'); 
-                card.classList.remove('opacity-0', 'translate-x-10');
+                document.getElementById('personal-stat-card').classList.remove('opacity-0', 'translate-x-10');
             } 
         } 
 
+        // 빛의 궤적 렌더링
         function renderPath(km) {
             const earthRatio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
             if (pathTube) { scene.remove(pathTube); pathTube.geometry.dispose(); pathTube.material.dispose(); } 
@@ -271,11 +271,25 @@
                 const tubeMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 2 }); 
                 pathTube = new THREE.Mesh(tubeGeo, tubeMat); 
                 scene.add(pathTube); 
+                
+                // 마커 위치 업데이트 및 기본 크기 유지
                 marker.position.copy(points[points.length - 1]); 
             } 
         }
 
-        // --- 기존 모달 로직 유지 ---
+        // 저장 후 반짝임 효과
+        function triggerSparkle() {
+            gsap.to(marker.scale, {
+                x: 4, y: 4, z: 4, 
+                duration: 0.4, 
+                yoyo: true, 
+                repeat: 3, 
+                ease: "power2.inOut",
+                onComplete: () => { marker.scale.set(1, 1, 1); }
+            });
+        }
+
+        // --- 모달 및 데이터 제어 ---
         function openLoginModal() { 
             document.getElementById('modal-backdrop').classList.remove('hidden'); 
             document.getElementById('login-modal').classList.remove('hidden'); 
@@ -314,10 +328,11 @@
             appData.users[currentUserId].dist += val; 
             appData.totalKm += val; 
             saveAndClose(); 
+            triggerSparkle(); // 저장 시 반짝임 효과 실행
         } 
 
         function saveAndClose() { 
-            localStorage.setItem('earthChallenge_v7', JSON.stringify(appData)); 
+            localStorage.setItem('earthChallenge_v8', JSON.stringify(appData)); 
             closeModals(); 
             updateVisuals(); 
             document.getElementById('inputKm').value = '';
@@ -340,12 +355,13 @@
                     appData.totalKm += (1 + Math.random() * 24); 
                 } 
                 countDisplay.innerText = count; 
-                updateVisuals(); // GSAP가 내부적으로 부드럽게 처리함
+                updateVisuals(); 
                 if (count >= 1000) { 
                     clearInterval(timer); 
                     btn.disabled = false; 
                     status.classList.add('hidden'); 
-                    localStorage.setItem('earthChallenge_v7', JSON.stringify(appData)); 
+                    localStorage.setItem('earthChallenge_v8', JSON.stringify(appData)); 
+                    triggerSparkle();
                 } 
             }, 50); 
         } 
