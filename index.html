@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>걸어서 지구 한바퀴 - 라이브 시뮬레이션</title>
+    <title>걸어서 지구 한바퀴 - 개인 기록 & 테스트</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap');
+        
         body { margin: 0; background: #00050a; color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; height: 100dvh; touch-action: none; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        #canvas-container::after { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.2); pointer-events: none; }
+
         .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 3rem 1.5rem; }
         .interactive { pointer-events: auto; }
         .title-font { font-family: 'Black Han Sans', sans-serif; }
-        .glass { background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        input { text-align: center; }
     </style>
 </head>
 <body>
@@ -23,98 +27,144 @@
     <div id="canvas-container"></div>
 
     <div class="fixed top-8 right-8 z-20 text-right interactive">
-        <p class="text-[10px] text-yellow-400/70 font-bold tracking-[0.2em] uppercase mb-1">Target: 2026.06.19</p>
-        <div id="dday-text" class="title-font text-4xl text-white drop-shadow-2xl">D-Day</div>
+        <p class="text-xs text-slate-400 font-bold tracking-widest uppercase mb-1 drop-shadow-md">Target: 06.19</p>
+        <div id="dday-text" class="title-font text-4xl text-yellow-400 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">D-Day</div>
     </div>
 
-    <div class="fixed bottom-8 left-8 z-30 interactive">
-        <button id="test-btn" onclick="runLiveSimulation()" class="glass px-6 py-3 rounded-full text-xs font-black text-yellow-400 border border-yellow-400/50 hover:bg-yellow-400 hover:text-black transition-all">
-            🔥 1,000명 동시입력 시뮬레이션
+    <div class="fixed bottom-8 left-8 z-20 interactive">
+        <button onclick="runStressTest()" class="bg-slate-700/50 hover:bg-slate-600/50 text-white/70 text-xs font-bold py-2 px-4 rounded-full backdrop-blur-md transition-colors">
+            TEST: 1000명 시뮬레이션
         </button>
-        <p id="test-status" class="text-[10px] text-slate-500 mt-2 ml-2 hidden">시뮬레이션 진행 중... <span id="test-count">0</span>/1000</p>
     </div>
 
     <div class="ui-overlay">
-        <div class="text-center">
-            <p id="user-greeting" class="text-yellow-400 text-sm font-bold tracking-[0.3em] mb-2 title-font">우리들의 지구 여행</p>
-            <div class="flex items-center justify-center gap-4">
-                <h1 class="title-font text-7xl md:text-9xl tracking-tighter">
-                    <span id="dist-text">0.00</span><span class="text-2xl text-slate-500 ml-2 font-sans italic">km</span>
+        <div class="text-center mt-10 md:mt-0">
+            <p id="user-greeting" class="text-yellow-400 text-sm md:text-lg font-bold tracking-[0.2em] mb-2 title-font drop-shadow-lg">나의 지구 여행</p>
+            
+            <div class="flex items-center justify-center gap-3 drop-shadow-xl">
+                <h1 class="title-font text-6xl md:text-8xl">
+                    <span id="dist-text">0.00</span><span class="text-xl text-slate-400 ml-1 font-sans">km</span>
                 </h1>
-                <div class="text-left border-l border-white/20 pl-4">
-                    <div id="percent-text" class="text-3xl md:text-4xl font-black text-yellow-400 leading-none">0.00%</div>
-                    <div class="text-[10px] text-slate-400 font-bold mt-1 uppercase">Total Progress</div>
+                <div class="flex flex-col items-start pt-2">
+                    <span id="percent-text" class="text-2xl md:text-3xl font-black text-yellow-400">0.00%</span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">내 목표 달성률</span>
                 </div>
             </div>
+             <p id="target-display" class="text-slate-500 text-sm mt-2 font-medium">목표 거리: <span id="target-km-text">40,075</span>km</p>
         </div>
 
-        <div class="w-full max-w-md mx-auto space-y-4 text-center">
-            <button onclick="startRecordFlow()" class="interactive w-full py-6 bg-white text-black rounded-2xl font-black text-2xl shadow-2xl active:scale-95 transition-transform">
+        <div class="w-full max-w-md mx-auto space-y-4 text-center mb-8 md:mb-0">
+            <button onclick="startRecordFlow()" class="interactive w-full py-6 bg-yellow-400 text-black rounded-2xl font-black text-2xl shadow-[0_10px_30px_rgba(250,204,21,0.4)] active:scale-95 transition-transform hover:bg-yellow-300">
                 기록 추가하기
             </button>
         </div>
     </div>
 
-    <div id="modal-backdrop" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl transition-all">
-        <div id="login-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden">
-            <h3 class="title-font text-3xl mb-8 text-yellow-400">본인 확인</h3>
-            <input type="text" id="loginName" placeholder="이름" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 mb-4 outline-none focus:border-yellow-400 font-bold text-center">
-            <input type="tel" id="loginPhone" maxlength="4" placeholder="휴대폰 뒷 4자리" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 mb-8 outline-none focus:border-yellow-400 font-bold text-center">
+    <div id="modal-backdrop" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-md transition-opacity">
+        
+        <div id="login-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center shadow-2xl border-yellow-400/30 hidden">
+            <h3 class="title-font text-3xl mb-6 text-yellow-400">본인 확인</h3>
+            <p class="text-slate-400 text-sm mb-8">기록을 관리할 이름과 연락처 뒷자리를 입력해주세요.</p>
+            <div class="space-y-5 mb-8">
+                <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" class="w-full bg-white/10 border border-white/20 rounded-xl p-4 outline-none focus:border-yellow-400 font-bold text-white">
+                <input type="tel" id="loginPhone" maxlength="4" placeholder="휴대폰 뒷 4자리" class="w-full bg-white/10 border border-white/20 rounded-xl p-4 outline-none focus:border-yellow-400 font-bold text-white">
+            </div>
             <div class="flex gap-4">
-                <button onclick="closeModals()" class="flex-1 py-4 text-slate-400 font-bold">취소</button>
-                <button onclick="handleLogin()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">확인</button>
+                <button onclick="closeAllModals()" class="flex-1 py-4 font-bold text-slate-400 hover:text-white transition-colors">취소</button>
+                <button onclick="handleLogin()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black shadow-lg hover:bg-yellow-300 transition-colors">확인</button>
             </div>
         </div>
 
-        <div id="record-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden">
-            <h3 id="modal-user-title" class="title-font text-3xl mb-2 text-yellow-400">사용자</h3>
-            <p class="text-slate-400 text-sm mb-8 uppercase tracking-widest">How many km today?</p>
-            <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 outline-none focus:border-yellow-400 text-5xl font-black text-center text-yellow-400">
-            <div class="flex gap-4">
-                <button onclick="closeModals()" class="flex-1 py-4 text-slate-400 font-bold">취소</button>
-                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">저장하기</button>
+        <div id="register-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center shadow-2xl border-yellow-400/30 hidden">
+            <h3 class="title-font text-2xl mb-4 text-yellow-400">환영합니다! 🎉</h3>
+            <p class="text-slate-300 mb-8 break-keep leading-relaxed">처음 오셨군요!<br>이번 여정의 <strong>최종 목표 거리</strong>를 설정해주세요.</p>
+            <div class="mb-8">
+                 <label class="text-xs text-slate-400 mb-2 block uppercase tracking-widest">목표 거리 (KM)</label>
+                <input type="number" id="targetKmInput" placeholder="예: 1000" class="w-full bg-white/10 border border-white/20 rounded-2xl p-5 outline-none focus:border-yellow-400 text-3xl font-bold text-white">
+                 <p class="text-xs text-slate-500 mt-2">*지구 한바퀴는 약 40,075km 입니다.</p>
+            </div>
+             <button onclick="handleRegister()" class="w-full py-4 bg-yellow-400 text-black rounded-2xl font-black shadow-lg hover:bg-yellow-300 transition-colors">목표 설정 완료</button>
+        </div>
+
+        <div id="record-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center shadow-2xl border-yellow-400/30 hidden">
+            <h3 class="title-font text-2xl mb-2 text-yellow-400"><span id="current-username"></span>님의 기록</h3>
+             <p class="text-slate-400 text-sm mb-8">오늘 얼마나 걸으셨나요?</p>
+            <div class="space-y-6">
+                <div>
+                    <label class="text-xs text-slate-400 mb-2 block uppercase tracking-widest">날짜 선택</label>
+                    <input type="date" id="inputDate" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-lg font-bold text-white">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-2 block uppercase tracking-widest">이동 거리 (KM)</label>
+                    <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/10 border border-white/20 rounded-2xl p-5 outline-none focus:border-yellow-400 text-4xl font-bold text-white">
+                </div>
+            </div>
+            <div class="flex gap-4 mt-10">
+                <button onclick="closeAllModals()" class="flex-1 py-4 font-bold text-slate-400 hover:text-white transition-colors">취소</button>
+                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black shadow-lg hover:bg-yellow-300 transition-colors">저장</button>
             </div>
         </div>
     </div>
 
+    <div id="bible-modal" onclick="closeBible()" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-10 bg-black/90 backdrop-blur-2xl cursor-pointer">
+        <div class="max-w-lg text-center pointer-events-none drop-shadow-2xl">
+            <div class="w-16 h-1 bg-yellow-400 mx-auto mb-10 shadow-[0_0_20px_rgba(250,204,21,0.8)]"></div>
+            <p id="bible-text" class="text-3xl md:text-5xl font-black leading-tight text-white mb-8 break-keep"></p>
+            <p id="bible-ref" class="text-yellow-400 font-bold tracking-[0.2em] text-lg uppercase"></p>
+        </div>
+    </div>
+
     <script>
+        // === 전역 변수 및 데이터 관리 ===
         let scene, camera, renderer, globe, marker, controls, pathTube;
         const EARTH_CIRCUMFERENCE = 40075; 
         const GLOBE_RADIUS = 2;
-        const PATH_RADIUS = 2.18;
-        
-        let appData = JSON.parse(localStorage.getItem('earthData_V3')) || { users: {}, totalGlobalKm: 0 };
-        let currentUser = null;
+        const PATH_RADIUS = 2.15;
 
+        let appData = JSON.parse(localStorage.getItem('earthWalkDataV2')) || { users: {} };
+        let currentUser = null;
+        let isTestRunning = false; // 테스트 실행 상태
+
+        function saveAppData() {
+            localStorage.setItem('earthWalkDataV2', JSON.stringify(appData));
+        }
+
+        // === 3D Scene 초기화 ===
         function init3D() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.toneMapping = THREE.ReinhardToneMapping;
-            renderer.toneMappingExposure = 1.5;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2; 
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
             const textureLoader = new THREE.TextureLoader();
-            scene.background = textureLoader.load('countdown.jpg', null, null, () => { scene.background = new THREE.Color(0x00050a); });
+            scene.background = textureLoader.load('countdown.jpg', undefined, undefined, (err) => {
+                scene.background = new THREE.Color(0x00050a);
+            });
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+            // 조명 채도 및 밝기 강화
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.95); // 환경광 대폭 강화
             scene.add(ambientLight);
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 2.2); // 주광 강화
             sunLight.position.set(5, 3, 5);
             scene.add(sunLight);
+            const backLight = new THREE.DirectionalLight(0xaaaaff, 1.0); // 후면광 강화
+            backLight.position.set(-5, -1, -5);
+            scene.add(backLight);
 
-            // 지구본: 채도와 반사광 대폭 강화
+
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+            // 지구 재질: 더 금속성 있고 반짝이게
             globe = new THREE.Mesh(
                 new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64), 
                 new THREE.MeshStandardMaterial({ 
-                    map: earthTexture, 
-                    roughness: 0.3, 
-                    metalness: 0.6,
-                    emissive: 0x112244,
-                    emissiveIntensity: 0.5
+                    map: earthTexture,
+                    roughness: 0.4, 
+                    metalness: 0.3,
+                    emissive: 0x222244,
                 })
             );
             scene.add(globe);
@@ -122,148 +172,260 @@
             marker = new THREE.Group();
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({
                 map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
-                color: 0xffcc00, transparent: true, blending: THREE.AdditiveBlending
+                color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending
             }));
-            glow.scale.set(1.2, 1.2, 1);
+            glow.scale.set(0.8, 0.8, 1);
             marker.add(glow);
             scene.add(marker);
 
-            camera.position.z = 6;
+            camera.position.z = 6.5;
+            
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.enableZoom = false;
+            controls.autoRotate = false; 
+
+            document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
 
             updateDDay();
-            updateVisuals(appData.totalGlobalKm);
+            updateVisuals(0, EARTH_CIRCUMFERENCE); 
             animate();
         }
 
+        // === UI 및 로직 함수 ===
+
         function updateDDay() {
             const target = new Date(2026, 5, 19);
-            const diff = target - new Date();
+            const today = new Date();
+            target.setHours(0,0,0,0); today.setHours(0,0,0,0);
+            const diff = target - today;
             const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-            document.getElementById('dday-text').innerText = days > 0 ? `D-${days}` : (days === 0 ? "D-Day" : `D+${Math.abs(days)}`);
+            const display = days === 0 ? "D-Day" : (days > 0 ? `D-${days}` : `D+${Math.abs(days)}`);
+            document.getElementById('dday-text').innerText = display;
         }
 
-        function updateVisuals(km) {
-            const ratio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
-            document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('percent-text').innerText = (ratio * 100).toFixed(2) + "%";
+        function updateVisuals(currentKm, targetKm) {
+            const safeTarget = targetKm || EARTH_CIRCUMFERENCE;
+            const ratio = Math.min(currentKm / safeTarget, 1);
+            const percent = (ratio * 100).toFixed(2);
             
             if (pathTube) scene.remove(pathTube);
             
             if (ratio > 0) {
                 const points = [];
-                const segments = Math.max(2, Math.floor(ratio * 300));
+                // 궤적은 항상 지구 전체 둘레를 기준으로 계산
+                const arcRatio = Math.min(currentKm / EARTH_CIRCUMFERENCE, 1);
+                const segments = Math.max(2, Math.floor(arcRatio * 200));
                 for (let i = 0; i <= segments; i++) {
-                    const pRatio = (i / segments) * ratio;
+                    const pRatio = (i / segments) * arcRatio;
                     const angle = Math.PI - (pRatio * Math.PI * 2);
                     points.push(new THREE.Vector3(Math.cos(angle) * PATH_RADIUS, Math.sin(angle) * PATH_RADIUS, 0));
                 }
 
                 const pathCurve = new THREE.CatmullRomCurve3(points);
-                const tubeGeo = new THREE.TubeGeometry(pathCurve, 128, 0.025, 8, false);
+                const tubeGeo = new THREE.TubeGeometry(pathCurve, 128, 0.02, 8, false);
+                // 빛의 궤적 발광 강도 강화 (2.0 -> 3.0)
                 const tubeMat = new THREE.MeshStandardMaterial({ 
-                    color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 3, metalness: 1, roughness: 0 
+                    color: 0xfacc15,
+                    emissive: 0xfacc15,
+                    emissiveIntensity: 3.0, 
+                    roughness: 0.2
                 });
                 pathTube = new THREE.Mesh(tubeGeo, tubeMat);
                 scene.add(pathTube);
 
                 const lastPoint = points[points.length - 1];
                 marker.position.copy(lastPoint);
+                marker.visible = true;
             } else {
                 marker.position.set(-PATH_RADIUS, 0, 0);
             }
-        }
 
-        // --- 시뮬레이션 로직 ---
-        function runLiveSimulation() {
-            const btn = document.getElementById('test-btn');
-            const status = document.getElementById('test-status');
-            const countDisplay = document.getElementById('test-count');
+            // 테스트 중일 때는 소수점 없이 정수로 표시
+            const fractionDigits = isTestRunning ? 0 : 2;
+            document.getElementById('dist-text').innerText = currentKm.toLocaleString(undefined, {minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits});
+            document.getElementById('percent-text').innerText = percent + "%";
             
-            btn.disabled = true;
-            btn.style.opacity = 0.3;
-            status.classList.remove('hidden');
-
-            let count = 0;
-            const total = 1000;
-            
-            // 시뮬레이션용 인터벌 (30ms 마다 1명씩 추가, 약 30초 소요)
-            const timer = setInterval(() => {
-                count++;
-                countDisplay.innerText = count;
-                
-                // 1~20km 사이 랜덤 추가
-                const randomKm = Math.random() * 19 + 1;
-                appData.totalGlobalKm += randomKm;
-                
-                // UI 업데이트
-                updateVisuals(appData.totalGlobalKm);
-
-                if (count >= total) {
-                    clearInterval(timer);
-                    btn.disabled = false;
-                    btn.style.opacity = 1;
-                    status.classList.add('hidden');
-                    alert("1,000명 입력 시뮬레이션 완료! 3D 렌더링 성능을 확인하세요.");
-                    localStorage.setItem('earthData_V3', JSON.stringify(appData));
+            if(!isTestRunning) {
+                 if(currentUser) {
+                    document.getElementById('user-greeting').innerText = `${currentUser.name}님의 지구 여행`;
+                    document.getElementById('target-km-text').innerText = currentUser.targetKm.toLocaleString();
+                } else {
+                     document.getElementById('user-greeting').innerText = "나의 지구 여행";
+                     document.getElementById('target-km-text').innerText = EARTH_CIRCUMFERENCE.toLocaleString();
                 }
-            }, 30); 
+            }
         }
 
-        // --- 사용자 프로세스 ---
+        // === 스트레스 테스트 함수 ===
+        function runStressTest() {
+            if (isTestRunning) return;
+            isTestRunning = true;
+            console.log("Starting 1000 User Stress Test...");
+            document.getElementById('user-greeting').innerText = "TEST RUNNING: Global Total";
+            document.getElementById('target-km-text').innerText = "Many Many";
+
+            const startTime = Date.now();
+            let submissions = 0;
+            const totalSubmissions = 1000;
+            const duration = 30000; // 30초
+            const intervalTime = duration / totalSubmissions; // 약 30ms 마다 실행
+
+            // 1. 더미 사용자 생성 (없을 경우)
+            for (let i = 0; i < 1000; i++) {
+                const userId = `test_user_${i}`;
+                if (!appData.users[userId]) {
+                    appData.users[userId] = { id: userId, name: `Tester ${i}`, phone: '0000', totalKm: 0, targetKm: EARTH_CIRCUMFERENCE };
+                }
+            }
+            // 테스트 시작 전 저장 한번 수행
+            saveAppData();
+
+            // 2. 제출 루프 시작
+            const testInterval = setInterval(() => {
+                submissions++;
+                if (submissions > totalSubmissions) {
+                    clearInterval(testInterval);
+                    finishStressTest(startTime);
+                    return;
+                }
+
+                // 랜덤 사용자 선택 및 데이터 추가
+                const randomUserIndex = Math.floor(Math.random() * 1000);
+                const userId = `test_user_${randomUserIndex}`;
+                appData.users[userId].totalKm += Math.floor(Math.random() * 15) + 1;
+                
+                // 매번 저장을 시뮬레이션 (부하 테스트 목적)
+                saveAppData(); 
+
+                // 전체 합계 계산 (시각적 피드백용)
+                let globalTotal = 0;
+                Object.values(appData.users).forEach(u => globalTotal += u.totalKm);
+
+                // 화면 업데이트 (requestAnimationFrame으로 UI 블로킹 방지 시도)
+                requestAnimationFrame(() => {
+                     // 테스트 중에는 목표를 매우 크게 잡아 궤적이 너무 빨리 차지 않게 함
+                     updateVisuals(globalTotal, EARTH_CIRCUMFERENCE * 10);
+                     document.getElementById('percent-text').innerText = `${submissions}/${totalSubmissions}`;
+                });
+
+            }, intervalTime);
+        }
+
+        function finishStressTest(startTime) {
+            isTestRunning = false;
+            const endTime = Date.now();
+            console.log(`Test Finished! 1000 submissions in ${(endTime - startTime) / 1000}s.`);
+            alert("테스트 완료! 콘솔창에서 결과를 확인하세요.");
+            // 원래 화면으로 복귀
+            if (currentUser) updateVisuals(currentUser.totalKm, currentUser.targetKm);
+            else updateVisuals(0, EARTH_CIRCUMFERENCE);
+        }
+
+
+        // === 사용자 흐름 (Flow) 관련 함수 ===
         function startRecordFlow() {
-            document.getElementById('modal-backdrop').classList.remove('hidden');
-            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('loginName').value = "";
+            document.getElementById('loginPhone').value = "";
+            currentUser = null;
+            showModal('login');
         }
 
         function handleLogin() {
-            const name = document.getElementById('loginName').value;
-            const phone = document.getElementById('loginPhone').value;
-            if(!name || phone.length < 4) return alert("정보를 입력해주세요.");
-            
-            currentUser = { name, phone };
-            document.getElementById('modal-user-title').innerText = name + "님";
-            document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('record-modal').classList.remove('hidden');
+            const name = document.getElementById('loginName').value.trim();
+            const phone = document.getElementById('loginPhone').value.trim();
+            if (!name || phone.length !== 4) { alert("이름과 휴대폰 뒷 4자리를 정확히 입력해주세요."); return; }
+            const userKey = `${name}_${phone}`;
+            if (appData.users[userKey]) {
+                currentUser = appData.users[userKey];
+                prepareRecordModal();
+            } else {
+                currentUser = { id: userKey, name: name, phone: phone, totalKm: 0, targetKm: EARTH_CIRCUMFERENCE };
+                showModal('register');
+            }
+        }
+
+        function handleRegister() {
+            const targetInput = document.getElementById('targetKmInput');
+            const targetKm = parseFloat(targetInput.value);
+            if (!targetKm || targetKm <= 0) { alert("올바른 목표 거리를 입력해주세요."); return; }
+            currentUser.targetKm = targetKm;
+            appData.users[currentUser.id] = currentUser;
+            saveAppData();
+            updateVisuals(currentUser.totalKm, currentUser.targetKm);
+            prepareRecordModal();
+        }
+
+        function prepareRecordModal() {
+            document.getElementById('current-username').innerText = currentUser.name;
+            document.getElementById('inputKm').value = "";
+            showModal('record');
         }
 
         function submitRecord() {
-            const val = parseFloat(document.getElementById('inputKm').value);
-            if(!val || val <= 0) return alert("거리를 입력해주세요.");
-
-            const prevKm = appData.totalGlobalKm;
-            appData.totalGlobalKm += val;
-            localStorage.setItem('earthData_V3', JSON.stringify(appData));
-            
-            closeModals();
-
-            // 부드러운 숫자 카운팅 애니메이션
-            gsap.to({v: prevKm}, {
-                v: appData.totalGlobalKm,
-                duration: 2,
-                onUpdate: function() { updateVisuals(this.targets()[0].v); }
+            if (!currentUser) return;
+            const kmInput = document.getElementById('inputKm');
+            let addedKm = parseFloat(kmInput.value) || 0;
+            if (addedKm <= 0) { closeAllModals(); return; }
+            const startKm = currentUser.totalKm;
+            currentUser.totalKm += addedKm;
+            appData.users[currentUser.id] = currentUser;
+            saveAppData();
+            closeAllModals();
+            gsap.to({ val: startKm }, {
+                val: currentUser.totalKm, duration: 2.0, ease: "power3.inOut",
+                onUpdate: function() { updateVisuals(this.targets()[0].val, currentUser.targetKm); },
+                onComplete: () => {
+                    gsap.fromTo(marker.scale, {x:1, y:1}, {x:2.5, y:2.5, duration: 0.5, yoyo:true, repeat:1, ease:"back.out(2)"});
+                    setTimeout(showBibleVerse, 800);
+                }
             });
         }
 
-        function closeModals() {
+        // === 모달 관리 유틸리티 ===
+        function showModal(modalName) {
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            ['login', 'register', 'record'].forEach(name => {
+                const el = document.getElementById(`${name}-modal`);
+                if (name === modalName) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+        }
+
+        function closeAllModals() {
             document.getElementById('modal-backdrop').classList.add('hidden');
-            document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('record-modal').classList.add('hidden');
+            document.querySelectorAll('#modal-backdrop > div').forEach(el => el.classList.add('hidden'));
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            if(globe) globe.rotation.y -= 0.002; // 지구 자전
-            controls.update();
-            renderer.render(scene, camera);
+        // === 기타 기능 ===
+        function showBibleVerse() {
+            const verses = [
+                { text: "이기기를 다투는 자마다 모든 일에 절제하나니", ref: "고린도전서 9:25" },
+                { text: "내가 선한 싸움을 싸우고 나의 달려갈 길을 마쳤으니", ref: "디모데후서 4:7" },
+                { text: "푯대를 향하여 그리스도 예수 안에서 달려가노라", ref: "빌립보서 3:14" },
+                { text: "인내로써 우리 앞에 당한 경주를 하며", ref: "히브리서 12:1" }
+            ];
+            const v = verses[Math.floor(Math.random() * verses.length)];
+            document.getElementById('bible-text').innerText = v.text;
+            document.getElementById('bible-ref').innerText = v.ref;
+            document.getElementById('bible-modal').classList.remove('hidden');
         }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        function closeBible() { document.getElementById('bible-modal').classList.add('hidden'); }
+
+        // === 메인 루프 ===
+        function animate() { 
+            requestAnimationFrame(animate); 
+            // 지구가 스스로 회전 (빛의 궤적은 고정)
+            if(globe) globe.rotation.y -= 0.0015; 
+            controls.update(); 
+            renderer.render(scene, camera); 
+        }
+
+        window.addEventListener('resize', () => { 
+            camera.aspect = window.innerWidth / window.innerHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(window.innerWidth, window.innerHeight); 
         });
 
         init3D();
