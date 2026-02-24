@@ -11,8 +11,12 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap');
         
+        /* body 배경색은 three.js 배경이 로드되기 전이나 로드 실패 시 보일 수 있습니다. */
         body { margin: 0; background: #00050a; color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; height: 100dvh; touch-action: none; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        /* 배경이 밝을 경우를 대비해 텍스트 가독성을 위한 약간의 어두운 오버레이 추가 (선택사항) */
+        #canvas-container::after { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); pointer-events: none; }
+
         .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 3rem 1.5rem; }
         .interactive { pointer-events: auto; }
         .title-font { font-family: 'Black Han Sans', sans-serif; }
@@ -23,40 +27,40 @@
 
     <div id="canvas-container"></div>
 
-    <div class="fixed top-8 right-8 z-20 text-right">
-        <p class="text-xs text-slate-400 font-bold tracking-widest uppercase mb-1">Target: 06.19</p>
-        <div id="dday-text" class="title-font text-4xl text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]">D-Day</div>
+    <div class="fixed top-8 right-8 z-20 text-right interactive">
+        <p class="text-xs text-slate-400 font-bold tracking-widest uppercase mb-1 drop-shadow-md">Target: 06.19</p>
+        <div id="dday-text" class="title-font text-4xl text-yellow-400 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">D-Day</div>
     </div>
 
     <div class="ui-overlay">
-        <div class="text-center">
-            <p class="text-yellow-400 text-sm md:text-lg font-bold tracking-[0.3em] mb-2 title-font">걸어서 지구 한바퀴</p>
+        <div class="text-center mt-10 md:mt-0">
+            <p class="text-yellow-400 text-sm md:text-lg font-bold tracking-[0.3em] mb-2 title-font drop-shadow-lg">걸어서 지구 한바퀴</p>
             
-            <div class="flex items-center justify-center gap-3">
+            <div class="flex items-center justify-center gap-3 drop-shadow-xl">
                 <h1 class="title-font text-7xl md:text-9xl">
                     <span id="dist-text">0.00</span><span class="text-xl text-slate-400 ml-1 font-sans">km</span>
                 </h1>
                 <div class="flex flex-col items-start pt-4">
                     <span id="percent-text" class="text-2xl md:text-4xl font-black text-yellow-400">0.00%</span>
-                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">PROGRESS</span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">PROGRESS</span>
                 </div>
             </div>
         </div>
 
-        <div class="w-full max-w-md mx-auto space-y-4 text-center">
-            <button onclick="toggleModal('record', true)" class="interactive w-full py-6 bg-white text-black rounded-2xl font-black text-2xl shadow-2xl active:scale-95 transition-transform">
+        <div class="w-full max-w-md mx-auto space-y-4 text-center mb-8 md:mb-0">
+            <button onclick="toggleModal('record', true)" class="interactive w-full py-6 bg-yellow-400 text-black rounded-2xl font-black text-2xl shadow-[0_10px_30px_rgba(250,204,21,0.4)] active:scale-95 transition-transform hover:bg-yellow-300">
                 기록 추가하기
             </button>
         </div>
     </div>
 
-    <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
-        <div class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center">
+    <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+        <div class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center shadow-2xl border-yellow-400/30">
             <h3 class="title-font text-3xl mb-8 text-yellow-400">활동 기록</h3>
             <div class="space-y-6">
                 <div>
                     <label class="text-xs text-slate-400 mb-2 block uppercase tracking-widest">날짜 선택</label>
-                    <input type="date" id="inputDate" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-lg font-bold text-white">
+                    <input type="date" id="inputDate" class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 outline-none focus:border-yellow-400 text-lg font-bold text-white text-center">
                 </div>
                 <div>
                     <label class="text-xs text-slate-400 mb-2 block uppercase tracking-widest">이동 거리 (KM)</label>
@@ -64,15 +68,15 @@
                 </div>
             </div>
             <div class="flex gap-4 mt-10">
-                <button onclick="toggleModal('record', false)" class="flex-1 py-4 font-bold text-slate-400">취소</button>
-                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black shadow-lg">저장</button>
+                <button onclick="toggleModal('record', false)" class="flex-1 py-4 font-bold text-slate-400 hover:text-white transition-colors">취소</button>
+                <button onclick="submitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black shadow-lg hover:bg-yellow-300 transition-colors">저장</button>
             </div>
         </div>
     </div>
 
-    <div id="bible-modal" onclick="closeBible()" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-10 bg-black/80 backdrop-blur-2xl cursor-pointer">
-        <div class="max-w-lg text-center pointer-events-none">
-            <div class="w-16 h-1 bg-yellow-400 mx-auto mb-10"></div>
+    <div id="bible-modal" onclick="closeBible()" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-10 bg-black/90 backdrop-blur-2xl cursor-pointer">
+        <div class="max-w-lg text-center pointer-events-none drop-shadow-2xl">
+            <div class="w-16 h-1 bg-yellow-400 mx-auto mb-10 shadow-[0_0_20px_rgba(250,204,21,0.8)]"></div>
             <p id="bible-text" class="text-3xl md:text-5xl font-black leading-tight text-white mb-8 break-keep"></p>
             <p id="bible-ref" class="text-yellow-400 font-bold tracking-[0.2em] text-lg uppercase"></p>
         </div>
@@ -83,27 +87,47 @@
         let totalKm = parseFloat(localStorage.getItem('walk_earth_km')) || 0;
         const EARTH_CIRCUMFERENCE = 40075; 
         const GLOBE_RADIUS = 2;
-        const PATH_RADIUS = 2.15; // 지구에 더 밀착되도록 조정
+        const PATH_RADIUS = 2.15;
 
         function init3D() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            // 배경 이미지가 있으므로 alpha: true는 필수가 아니지만 유지합니다.
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
+            // 톤 매핑을 추가하여 전체적인 빛 반사를 부드럽게 만듭니다.
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
-            const sunLight = new THREE.DirectionalLight(0xffffff, 1);
-            sunLight.position.set(5, 5, 5);
-            scene.add(sunLight);
-
             const textureLoader = new THREE.TextureLoader();
+            
+            // ▼▼▼ 배경 이미지 설정 ▼▼▼
+            // 'countdown.jpg' 파일이 HTML과 같은 폴더에 있어야 합니다.
+            scene.background = textureLoader.load('countdown.jpg');
+            // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // 배경이 생겨서 환경광을 조금 줄임
+            scene.add(ambientLight);
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.2); // 주광을 조금 더 세게
+            sunLight.position.set(5, 3, 5);
+            scene.add(sunLight);
+            // 지구 뒤쪽을 비추는 보조광 추가
+            const backLight = new THREE.DirectionalLight(0x5555ff, 0.5);
+            backLight.position.set(-5, -3, -5);
+            scene.add(backLight);
+
+
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
+            // 지구 재질을 StandardMaterial로 변경하여 빛 반사를 더 리얼하게 표현
             globe = new THREE.Mesh(
                 new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64), 
-                new THREE.MeshPhongMaterial({ map: earthTexture })
+                new THREE.MeshStandardMaterial({ 
+                    map: earthTexture,
+                    roughness: 0.5,
+                    metalness: 0.1
+                })
             );
             scene.add(globe);
 
@@ -112,15 +136,17 @@
                 map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
                 color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending
             }));
-            glow.scale.set(0.8, 0.8, 1); // 마커 크기도 줄임
+            glow.scale.set(0.8, 0.8, 1);
             marker.add(glow);
             scene.add(marker);
 
-            camera.position.z = 6;
+            camera.position.z = 6.5; // 카메라를 조금 더 뒤로 빼서 배경이 잘 보이게 함
             
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.enableZoom = false;
+            controls.autoRotate = true; // 배경이 정지해 있으므로 지구를 천천히 자동 회전시킴
+            controls.autoRotateSpeed = 0.5;
 
             document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
 
@@ -130,12 +156,25 @@
         }
 
         function updateDDay() {
-            const target = new Date('2026-06-19T00:00:00');
+            // 목표 날짜: 2026년 6월 19일 (월은 0부터 시작하므로 5가 6월)
+            const target = new Date(2026, 5, 19); 
             const today = new Date();
+            // 시간 정보 제거하여 날짜만 비교
+            target.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+
             const diff = target - today;
+            // 밀리초를 일 단위로 변환
             const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
             
-            const display = days === 0 ? "D-Day" : (days > 0 ? `D-${days}` : `D+${Math.abs(days)}`);
+            let display;
+            if (days > 0) {
+                display = `D-${days}`;
+            } else if (days === 0) {
+                display = "D-Day";
+            } else {
+                display = `D+${Math.abs(days)}`;
+            }
             document.getElementById('dday-text').innerText = display;
         }
 
@@ -150,14 +189,21 @@
                 const segments = Math.max(2, Math.floor(ratio * 200));
                 for (let i = 0; i <= segments; i++) {
                     const pRatio = (i / segments) * ratio;
-                    const angle = (Math.PI / 2) - (pRatio * Math.PI * 2);
+                    // 시작점을 9시 방향(한국/아시아 부근)으로 조정하여 시계방향 진행
+                    const angle = Math.PI - (pRatio * Math.PI * 2);
                     points.push(new THREE.Vector3(Math.cos(angle) * PATH_RADIUS, Math.sin(angle) * PATH_RADIUS, 0));
                 }
 
                 const pathCurve = new THREE.CatmullRomCurve3(points);
-                // 반경을 0.02로 줄여서 '얇은 빛' 구현
+                // 얇은 빛 궤적 (반경 0.02)
                 const tubeGeo = new THREE.TubeGeometry(pathCurve, 128, 0.02, 8, false);
-                const tubeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+                // 발광 효과를 위해 Emissive 재질 사용
+                const tubeMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xfacc15,
+                    emissive: 0xfacc15,
+                    emissiveIntensity: 1,
+                    roughness: 0.4
+                });
                 pathTube = new THREE.Mesh(tubeGeo, tubeMat);
                 scene.add(pathTube);
 
@@ -165,7 +211,8 @@
                 marker.position.copy(lastPoint);
                 marker.visible = true;
             } else {
-                marker.position.set(0, PATH_RADIUS, 0);
+                // 0km 일 때 시작점 위치 (9시 방향)
+                marker.position.set(-PATH_RADIUS, 0, 0);
             }
 
             document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2});
@@ -184,12 +231,12 @@
 
             gsap.to({ val: startKm }, {
                 val: totalKm,
-                duration: 2,
-                ease: "power2.out",
+                duration: 2.5,
+                ease: "power3.inOut",
                 onUpdate: function() { updateVisuals(this.targets()[0].val); },
                 onComplete: () => {
-                    gsap.fromTo(marker.scale, {x:1, y:1}, {x:2, y:2, duration: 0.4, yoyo:true, repeat:1});
-                    setTimeout(showBibleVerse, 600);
+                    gsap.fromTo(marker.scale, {x:1, y:1}, {x:2.5, y:2.5, duration: 0.5, yoyo:true, repeat:1, ease:"back.out(2)"});
+                    setTimeout(showBibleVerse, 800);
                     kmInput.value = "";
                 }
             });
@@ -213,7 +260,8 @@
 
         function animate() { 
             requestAnimationFrame(animate); 
-            if(globe) globe.rotation.y += 0.001; 
+            // controls.autoRotate를 켰으므로 수동 회전 코드는 주석 처리
+            // if(globe) globe.rotation.y += 0.001; 
             controls.update(); 
             renderer.render(scene, camera); 
         }
