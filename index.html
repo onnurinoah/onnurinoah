@@ -11,35 +11,43 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap');
         
-        body { margin: 0; background: #00050a; color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; height: 100dvh; touch-action: none; }
+        body { margin: 0; background: radial-gradient(circle at center, #001529 0%, #00050a 100%); color: white; font-family: 'Pretendard', sans-serif; overflow: hidden; height: 100dvh; touch-action: none; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem; }
+        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 2.5rem; }
         .interactive { pointer-events: auto; }
         .title-font { font-family: 'Black Han Sans', sans-serif; }
-        
-        /* 가로형 러닝 시뮬레이터 (하단) */
-        #runner-zone {
-            position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 600px; height: 100px; border-radius: 20px; overflow: hidden;
-            background: rgba(250, 204, 21, 0.05); border: 1px solid rgba(250, 204, 21, 0.2);
-            z-index: 20; display: flex; align-items: center;
-        }
-        #ground-lane {
-            position: absolute; bottom: 15px; width: 200%; height: 4px;
-            background: repeating-linear-gradient(90deg, #facc15 0px, #facc15 20px, transparent 20px, transparent 40px);
-            opacity: 0.5;
-        }
-        .running #ground-lane { animation: moveGroundHorizontally 0.5s linear infinite; }
-        @keyframes moveGroundHorizontally { from { transform: translateX(0); } to { transform: translateX(-40px); } }
-        
-        #runner-char { 
-            position: relative; font-size: 50px; z-index: 25; margin-left: 40px; 
-            filter: drop-shadow(0 0 15px rgba(255,255,255,0.8)); transition: transform 0.2s;
-        }
-        .running #runner-char { animation: runBounce 0.3s ease-in-out infinite alternate; }
-        @keyframes runBounce { from { transform: translateY(0) rotate(-5deg); } to { transform: translateY(-10px) rotate(5deg); } }
 
-        .dday-badge { background: #ef4444; color: white; padding: 4px 12px; border-radius: 8px; font-weight: 900; font-size: 1.1rem; }
+        /* 지구 옆 러닝 위젯 (오른쪽 상단/중앙 사이) */
+        #side-runner {
+            position: fixed; right: 30px; top: 40%; transform: translateY(-50%);
+            width: 140px; height: 180px; z-index: 30;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            background: rgba(255, 255, 255, 0.03); border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px); padding-bottom: 20px;
+        }
+
+        /* 예수님 캐릭터 그래픽 (CSS) */
+        .jesus-model { position: relative; width: 60px; height: 90px; margin-bottom: 10px; opacity: 0.9; }
+        .robe { position: absolute; bottom: 0; width: 40px; height: 50px; background: #f0f0f0; left: 10px; border-radius: 10px 10px 5px 5px; }
+        .head { position: absolute; top: 5px; left: 17px; width: 26px; height: 26px; background: #ffe0bd; border-radius: 50%; }
+        .hair { position: absolute; top: 0; left: 15px; width: 30px; height: 20px; background: #5d4037; border-radius: 15px 15px 0 0; }
+        .sash { position: absolute; top: 35px; left: 10px; width: 40px; height: 10px; background: #e53935; transform: rotate(-15deg); }
+        
+        /* 달리기 애니메이션 */
+        .running .jesus-model { animation: jog 0.6s infinite ease-in-out; }
+        .running .robe { animation: wave 0.3s infinite alternate; }
+        @keyframes jog { 0%, 100% { transform: translateY(0) rotate(5deg); } 50% { transform: translateY(-15px) rotate(-5deg); } }
+        @keyframes wave { from { transform: scaleX(1); } to { transform: scaleX(1.1) skewX(5deg); } }
+
+        /* 바닥 구동광선 */
+        .speed-line {
+            width: 60px; height: 4px; background: #facc15; border-radius: 2px;
+            margin-top: 5px; opacity: 0;
+        }
+        .running .speed-line { animation: speedMove 0.4s infinite linear; opacity: 1; }
+        @keyframes speedMove { from { transform: scaleX(0.2); opacity: 1; } to { transform: scaleX(1.5); opacity: 0; } }
+
+        .dday-badge { background: #ef4444; border: 2px solid white; color: white; padding: 2px 10px; border-radius: 20px; font-weight: 900; box-shadow: 0 0 15px rgba(239,68,68,0.4); }
     </style>
 </head>
 <body>
@@ -48,64 +56,66 @@
 
     <div class="ui-overlay">
         <div class="flex justify-between items-start">
-            <div class="text-left">
-                <p class="text-yellow-400 text-sm font-bold tracking-widest title-font mb-1">걸어서 지구 한바퀴</p>
-                <div class="flex items-center gap-2">
-                    <span class="dday-badge" id="dday-text">D-DAY</span>
-                    <span class="text-slate-400 text-xs font-bold">목표: 6월 19일</span>
+            <div>
+                <h2 class="title-font text-yellow-400 text-xl tracking-widest">걸어서 지구 한바퀴</h2>
+                <div class="mt-2 flex items-center gap-2">
+                    <span class="dday-badge text-sm" id="dday-text">D-DAY</span>
+                    <span class="text-xs font-bold text-white/60">GOAL: 2026.06.19</span>
                 </div>
             </div>
         </div>
 
-        <div class="text-center mb-20">
-            <h1 class="title-font text-8xl md:text-[11rem] leading-none mb-4">
-                <span id="dist-text">0.00</span><span class="text-2xl text-slate-500 ml-2 font-sans italic">km</span>
+        <div class="text-center">
+            <h1 class="title-font text-8xl md:text-9xl tracking-tighter mb-4 transition-all">
+                <span id="dist-text">0.00</span><span class="text-xl text-slate-500 ml-2 font-sans italic tracking-normal">KM</span>
             </h1>
-            <div class="inline-flex items-center gap-4 bg-yellow-400 text-black px-8 py-2 rounded-full shadow-xl">
-                <span class="font-black text-sm uppercase tracking-tighter">Progress</span>
-                <span id="percent-text" class="font-black text-4xl">0.00%</span>
+            <div class="bg-white/5 border border-white/10 rounded-3xl p-4 inline-block backdrop-blur-md">
+                <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mb-1">Total Progress</p>
+                <div class="flex items-center gap-4">
+                    <span id="percent-text" class="text-5xl font-black text-yellow-400">0.00%</span>
+                </div>
             </div>
         </div>
 
-        <div class="w-full max-w-md mx-auto">
-            <button onclick="toggleModal('record', true)" class="interactive w-full py-6 bg-white text-black rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-transform">
+        <div class="max-w-md mx-auto w-full">
+            <button onclick="toggleModal('record', true)" class="interactive w-full py-7 bg-white text-black rounded-[2.5rem] font-black text-2xl shadow-[0_20px_60px_rgba(255,255,255,0.15)] active:scale-95 transition-all">
                 기록 추가하기
             </button>
         </div>
     </div>
 
-    <div id="runner-zone">
-        <div id="ground-lane"></div>
-        <div id="runner-char">✨🏃</div>
-        <div class="absolute right-6 bottom-4 text-[10px] text-yellow-400/50 font-black italic">STEP BY STEP...</div>
+    <div id="side-runner">
+        <div class="jesus-model">
+            <div class="hair"></div>
+            <div class="head"></div>
+            <div class="robe"></div>
+            <div class="sash"></div>
+        </div>
+        <div class="speed-line"></div>
+        <div class="speed-line" style="animation-delay: 0.1s"></div>
+        <div class="text-[10px] text-yellow-400 font-black mt-4 tracking-widest">KEEP RUNNING</div>
     </div>
 
-    <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl">
-        <div class="interactive glass w-full max-w-sm p-10 rounded-[50px] text-white text-center border border-white/20">
-            <h3 class="title-font text-3xl mb-8 text-yellow-400">활동 기록</h3>
+    <div id="record-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl">
+        <div class="interactive w-full max-w-sm p-10 bg-[#111] border border-white/10 rounded-[3rem] text-center">
+            <h3 class="title-font text-3xl mb-8 text-yellow-400">오직 믿음으로 전진</h3>
             <div class="space-y-6 text-left">
-                <div>
-                    <label class="text-xs text-slate-500 mb-2 block font-bold uppercase tracking-widest">날짜</label>
-                    <input type="date" id="inputDate" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-yellow-400 text-lg font-bold">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-500 mb-2 block font-bold uppercase tracking-widest">이동 거리 (KM)</label>
-                    <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 outline-none focus:border-yellow-400 text-5xl font-bold text-center">
-                </div>
+                <input type="date" id="inputDate" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white font-bold">
+                <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-5xl font-bold text-center text-yellow-400 outline-none focus:border-yellow-400">
             </div>
             <div class="flex gap-4 mt-10">
-                <button onclick="toggleModal('record', false)" class="flex-1 py-5 font-bold text-slate-400">취소</button>
-                <button onclick="submitRecord()" class="flex-1 py-5 bg-yellow-400 text-black rounded-2xl font-black shadow-lg">저장</button>
+                <button onclick="toggleModal('record', false)" class="flex-1 py-5 font-bold text-slate-500">닫기</button>
+                <button onclick="submitRecord()" class="flex-1 py-5 bg-yellow-400 text-black rounded-2xl font-black">확인</button>
             </div>
         </div>
     </div>
 
     <script>
         let scene, camera, renderer, globe, marker, controls, pathTube;
-        let totalKm = parseFloat(localStorage.getItem('walk_earth_km_v4')) || 0;
+        let totalKm = parseFloat(localStorage.getItem('walk_earth_v5')) || 0;
         const EARTH_CIRCUMFERENCE = 40075; 
         const GLOBE_RADIUS = 2;
-        const PATH_RADIUS = 2.1; // 지구보다 살짝 크게
+        const PATH_RADIUS = 2.6; // 지름을 대폭 늘려 지구와 겹치지 않게 함
 
         function init3D() {
             scene = new THREE.Scene();
@@ -115,52 +125,50 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(5, 5, 5);
-            scene.add(light);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(5, 5, 5);
+            scene.add(sun);
 
             const textureLoader = new THREE.TextureLoader();
             const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
             globe = new THREE.Mesh(
                 new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64), 
-                new THREE.MeshPhongMaterial({ map: earthTexture })
+                new THREE.MeshPhongMaterial({ map: earthTexture, shininess: 5 })
             );
             scene.add(globe);
 
-            // 빛의 마커
+            // 빛의 마커 (고리 위를 도는 성스러운 빛)
             marker = new THREE.Group();
             const glow = new THREE.Sprite(new THREE.SpriteMaterial({
                 map: textureLoader.load('https://threejs.org/examples/textures/lensflare/lensflare0.png'),
                 color: 0xfff000, transparent: true, blending: THREE.AdditiveBlending,
-                depthTest: false // 가려지지 않게 설정
+                depthTest: false 
             }));
-            glow.scale.set(1.2, 1.2, 1);
+            glow.scale.set(1.5, 1.5, 1);
             marker.add(glow);
-            marker.renderOrder = 999; // 항상 위에 렌더링
+            marker.renderOrder = 10;
             scene.add(marker);
 
-            camera.position.z = 6;
+            camera.position.z = 7;
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.enableZoom = false;
 
-            // D-Day 계산 (6월 19일)
+            // D-Day (6.19)
             const today = new Date();
-            const dday = new Date(today.getFullYear(), 5, 19); 
-            if (today > dday) dday.setFullYear(dday.getFullYear() + 1);
+            const dday = new Date(2026, 5, 19); 
             const diff = Math.ceil((dday - today) / (1000 * 60 * 60 * 24));
             document.getElementById('dday-text').innerText = `D-${diff}`;
-
             document.getElementById('inputDate').value = today.toISOString().substring(0, 10);
+
             updateVisuals(totalKm);
             animate();
         }
 
         function updateVisuals(km) {
             const ratio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
-            const percent = (ratio * 100).toFixed(2);
-            
             if (pathTube) scene.remove(pathTube);
             
             if (ratio > 0) {
@@ -171,27 +179,20 @@
                     const angle = (Math.PI / 2) - (pRatio * Math.PI * 2);
                     points.push(new THREE.Vector3(Math.cos(angle) * PATH_RADIUS, Math.sin(angle) * PATH_RADIUS, 0));
                 }
-
                 const pathCurve = new THREE.CatmullRomCurve3(points);
-                const tubeGeo = new THREE.TubeGeometry(pathCurve, segments, 0.025, 8, false);
-                const tubeMat = new THREE.MeshBasicMaterial({ 
-                    color: 0xfacc15, 
-                    depthTest: false, // 이 설정이 지구에 가려지는 것을 방지함
-                    transparent: true,
-                    opacity: 0.9
-                });
+                const tubeGeo = new THREE.TubeGeometry(pathCurve, segments, 0.015, 8, false);
+                const tubeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, depthTest: false, transparent: true, opacity: 0.8 });
                 pathTube = new THREE.Mesh(tubeGeo, tubeMat);
-                pathTube.renderOrder = 998; // 마커보다는 아래, 지구보다는 위
+                pathTube.renderOrder = 5;
                 scene.add(pathTube);
 
-                const lastPoint = points[points.length - 1];
-                marker.position.copy(lastPoint);
+                marker.position.copy(points[points.length - 1]);
             } else {
                 marker.position.set(0, PATH_RADIUS, 0);
             }
 
             document.getElementById('dist-text').innerText = km.toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('percent-text').innerText = percent + "%";
+            document.getElementById('percent-text').innerText = (ratio * 100).toFixed(2) + "%";
         }
 
         function submitRecord() {
@@ -199,23 +200,19 @@
             let addedKm = parseFloat(kmInput.value) || 0;
             if (addedKm <= 0) { toggleModal('record', false); return; }
 
-            const startKm = totalKm;
             totalKm += addedKm;
-            localStorage.setItem('walk_earth_km_v4', totalKm);
+            localStorage.setItem('walk_earth_v5', totalKm);
             toggleModal('record', false);
 
-            // 가로 러닝 애니메이션 활성화
-            const zone = document.getElementById('runner-zone');
-            zone.classList.add('running');
+            document.getElementById('side-runner').classList.add('running');
 
-            gsap.to({ val: startKm }, {
+            gsap.to({ val: totalKm - addedKm }, {
                 val: totalKm,
-                duration: 3,
-                ease: "power2.inOut",
+                duration: 2.5,
+                ease: "power2.out",
                 onUpdate: function() { updateVisuals(this.targets()[0].val); },
                 onComplete: () => {
-                    zone.classList.remove('running');
-                    gsap.fromTo(marker.scale, {x:1, y:1}, {x:3, y:3, duration: 0.5, yoyo:true, repeat:1});
+                    document.getElementById('side-runner').classList.remove('running');
                     kmInput.value = "";
                 }
             });
