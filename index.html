@@ -20,41 +20,47 @@
             touch-action: none; 
         } 
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; } 
-        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 2rem 1.5rem; } 
+        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 1.5rem 1rem; } 
         .interactive { pointer-events: auto; } 
         .title-font { font-family: 'Black Han Sans', sans-serif; } 
         .glass { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); } 
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; } 
+        
+        /* 모바일 폰트 크기 미세 조정 */
+        @media (max-width: 380px) {
+            .dist-text { font-size: 3.5rem !important; }
+            .dist-fraction { font-size: 2rem !important; }
+        }
     </style> 
 </head> 
 <body> 
 
     <div id="canvas-container"></div> 
 
-    <div class="fixed top-6 left-6 z-20">
-        <div class="glass px-6 py-3 rounded-2xl border-l-4 border-l-red-500">
-            <p class="text-[11px] text-red-400 font-bold tracking-widest mb-0.5">COUNTDOWN</p>
-            <div id="d-day-text" class="title-font text-4xl text-white italic">D-00</div>
+    <div class="fixed top-4 left-4 z-20 scale-90 origin-top-left md:scale-100">
+        <div class="glass px-5 py-2 rounded-2xl border-l-4 border-l-red-500">
+            <p class="text-[10px] text-red-400 font-bold tracking-widest mb-0.5">COUNTDOWN</p>
+            <div id="d-day-text" class="title-font text-3xl text-white italic">D-00</div>
         </div>
     </div>
 
-    <div class="fixed top-6 right-6 z-20 flex flex-col items-end gap-4"> 
-        <div class="glass p-5 rounded-2xl text-right min-w-[180px]"> 
-            <p class="text-[11px] text-yellow-400/80 font-bold tracking-widest mb-1">전체 목표기록</p> 
-            <div id="global-target-display" class="title-font text-2xl text-white italic">0 km</div> 
+    <div class="fixed top-4 right-4 z-20 flex flex-col items-end gap-3 scale-90 origin-top-right md:scale-100"> 
+        <div class="glass p-4 rounded-2xl text-right min-w-[150px]"> 
+            <p class="text-[10px] text-yellow-400/80 font-bold tracking-widest mb-1">전체 목표기록</p> 
+            <div id="global-target-display" class="title-font text-xl text-white italic">0 km</div> 
         </div> 
 
         <div id="personal-stat-card" class="opacity-0 transform translate-x-10 transition-all duration-700"> 
-            <div class="glass p-5 rounded-2xl border-r-4 border-r-yellow-400 text-right min-w-[220px]"> 
-                <p class="text-yellow-400 font-black text-[11px] tracking-widest mb-1 uppercase">내 기록</p> 
-                <div class="space-y-2"> 
-                    <div class="flex items-baseline justify-end gap-2"> 
-                        <span id="my-dist-text" class="title-font text-3xl">0.00</span> 
-                        <span class="text-xs text-slate-400">/ <span id="my-target-text">0</span> km</span> 
+            <div class="glass p-4 rounded-2xl border-r-4 border-r-yellow-400 text-right min-w-[180px]"> 
+                <p class="text-yellow-400 font-black text-[10px] tracking-widest mb-1 uppercase">내 기록</p> 
+                <div class="space-y-1"> 
+                    <div class="flex items-baseline justify-end gap-1"> 
+                        <span id="my-dist-text" class="title-font text-2xl">0.00</span> 
+                        <span class="text-[10px] text-slate-400">/ <span id="my-target-text">0</span> km</span> 
                     </div> 
-                    <div class="flex items-center justify-end gap-3"> 
-                        <span id="my-percent-text" class="text-sm font-black text-yellow-400 italic">0%</span> 
-                        <div class="w-24 h-2 bg-white/10 rounded-full overflow-hidden"> 
+                    <div class="flex items-center justify-end gap-2"> 
+                        <span id="my-percent-text" class="text-xs font-black text-yellow-400 italic">0%</span> 
+                        <div class="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden"> 
                             <div id="my-progress-bar" class="h-full bg-yellow-400" style="width: 0%"></div> 
                         </div> 
                     </div> 
@@ -64,56 +70,47 @@
     </div> 
 
     <div class="ui-overlay"> 
-        <div class="text-center pt-10"> 
-            <div class="flex items-center justify-center gap-3 mb-2">
-                <p class="text-yellow-400 text-lg md:text-xl font-bold tracking-[0.4em] title-font">누적 거리</p>
-                <span class="text-xs md:text-sm text-white/50 font-bold">(지구 둘레 40,075km)</span>
+        <div class="text-center pt-20 md:pt-10"> 
+            <div class="flex flex-col items-center justify-center gap-1 mb-2">
+                <p class="text-yellow-400 text-base md:text-xl font-bold tracking-[0.3em] title-font">누적 거리</p>
+                <span class="text-[10px] md:text-sm text-white/50 font-bold">(지구 둘레 40,075km)</span>
             </div>
             <div class="flex flex-col items-center"> 
-                <div id="dist-container" class="title-font text-7xl md:text-9xl tracking-tighter flex items-baseline">
+                <div id="dist-container" class="title-font text-6xl md:text-9xl tracking-tighter flex items-baseline dist-text">
                     <span id="dist-integer">0</span>
-                    <span id="dist-fraction" class="text-4xl md:text-7xl">.0</span>
-                    <span id="dist-unit" class="text-4xl md:text-7xl ml-2 italic text-slate-500">km</span>
+                    <span id="dist-fraction" class="text-3xl md:text-7xl">.0</span>
+                    <span id="dist-unit" class="text-3xl md:text-7xl ml-1 italic text-slate-500">km</span>
                 </div> 
-                <div class="mt-4"> 
-                    <div id="percent-text" class="text-4xl font-black text-white">0.00%</div> 
-                    <div class="w-64 h-1.5 bg-white/10 rounded-full mt-3 mx-auto overflow-hidden"> 
+                <div class="mt-2 md:mt-4"> 
+                    <div id="percent-text" class="text-3xl md:text-4xl font-black text-white">0.00%</div> 
+                    <div class="w-48 md:w-64 h-1.5 bg-white/10 rounded-full mt-3 mx-auto overflow-hidden"> 
                         <div id="global-progress-bar" class="h-full bg-yellow-400 shadow-[0_0_15px_#fbbf24]" style="width: 0%"></div> 
                     </div> 
                 </div> 
             </div> 
         </div> 
 
-        <div class="w-full max-w-xs mx-auto pb-10"> 
-            <button onclick="openLoginModal()" class="interactive w-full py-5 bg-white text-black rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-transform"> 
+        <div class="w-full max-w-xs mx-auto pb-8 md:pb-10 px-4"> 
+            <button onclick="openLoginModal()" class="interactive w-full py-4 md:py-5 bg-white text-black rounded-2xl font-black text-lg md:text-xl shadow-2xl active:scale-95 transition-transform"> 
                 기록 추가하기 
             </button> 
         </div> 
     </div> 
 
-    <div class="fixed bottom-6 left-6 z-30 interactive"> 
-        <button id="test-btn" onclick="runMegaSimulation()" class="glass px-5 py-2.5 rounded-xl text-[10px] font-black text-white/40 border border-white/5 hover:text-yellow-400 hover:border-yellow-400/50 transition-all"> 
-            🔥 테스트 데이터 주입
-        </button> 
-        <div id="test-status" class="hidden mt-2 p-2 bg-yellow-400 rounded-lg text-black font-black text-[9px] animate-bounce"> 
-            SIMULATING: <span id="test-count">0</span> / 1,000 
-        </div> 
-    </div> 
-
     <div id="modal-backdrop" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"> 
-        <div id="login-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center"> 
-            <h3 class="title-font text-3xl mb-8 text-yellow-400">본인 확인</h3> 
+        <div id="login-modal" class="interactive glass w-full max-w-sm p-6 md:p-8 rounded-[30px] md:rounded-[40px] text-white text-center"> 
+            <h3 class="title-font text-2xl md:text-3xl mb-6 text-yellow-400">본인 확인</h3> 
             <div class="space-y-4"> 
                 <input type="text" id="loginName" placeholder="이름" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-yellow-400 font-bold text-center"> 
                 <input type="number" id="loginPhone" placeholder="휴대폰 뒷 4자리" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-yellow-400 font-bold text-center"> 
             </div> 
-            <div class="flex gap-4 mt-8"> 
+            <div class="flex gap-4 mt-6"> 
                 <button onclick="closeModals()" class="flex-1 py-4 text-slate-400 font-bold">취소</button> 
                 <button onclick="processLogin()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">확인</button> 
             </div> 
         </div> 
 
-        <div id="target-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden"> 
+        <div id="target-modal" class="interactive glass w-full max-w-sm p-6 md:p-8 rounded-[30px] md:rounded-[40px] text-white text-center hidden"> 
             <h3 class="title-font text-2xl mb-2 text-yellow-400">목표 설정</h3> 
             <p class="text-slate-400 text-[10px] mb-8 uppercase tracking-widest font-bold">도전 목표 거리를 입력하세요</p> 
             <div class="relative mb-10">
@@ -123,11 +120,11 @@
             <button onclick="processTargetSetting()" class="w-full py-5 bg-yellow-400 text-black rounded-2xl font-black text-lg">도전 시작하기</button> 
         </div> 
 
-        <div id="record-modal" class="interactive glass w-full max-w-sm p-8 rounded-[40px] text-white text-center hidden"> 
-            <h3 id="modal-user-title" class="title-font text-3xl mb-1 text-yellow-400">사용자님</h3> 
-            <p class="text-slate-500 text-[10px] mb-8 uppercase tracking-widest font-bold italic">얼마나 걷거나 뛰셨나요?</p> 
+        <div id="record-modal" class="interactive glass w-full max-w-sm p-6 md:p-8 rounded-[30px] md:rounded-[40px] text-white text-center hidden"> 
+            <h3 id="modal-user-title" class="title-font text-2xl md:text-3xl mb-1 text-yellow-400">사용자님</h3> 
+            <p class="text-slate-500 text-[10px] mb-8 uppercase tracking-widest font-bold italic">얼마나 걷거나 뛰셨나요? (최대 50km)</p> 
             <div class="relative mb-10">
-                <input type="number" id="inputKm" step="0.1" placeholder="0.0" class="w-full bg-transparent border-b-2 border-yellow-400 outline-none text-6xl font-black text-center text-yellow-400 p-2"> 
+                <input type="number" id="inputKm" step="0.1" max="50" placeholder="0.0" class="w-full bg-transparent border-b-2 border-yellow-400 outline-none text-5xl md:text-6xl font-black text-center text-yellow-400 p-2"> 
                 <span class="absolute right-0 bottom-2 text-yellow-400 font-bold text-xl">km</span>
             </div>
             <div class="flex gap-4"> 
@@ -143,7 +140,6 @@
         const GLOBE_RADIUS = 2; 
         const PATH_RADIUS = 2.15; 
         
-        // 전역 데이터 객체
         window.appData = { users: {}, totalKm: 0, totalGoal: 0 };
         let visualData = { totalKm: 0, totalGoal: 0, personalDist: 0, personalTarget: 0 };
         let currentUserId = null; 
@@ -184,6 +180,7 @@
             ); 
             scene.add(globe); 
 
+            // 마커와 궤적은 globe의 자식이 아닌 scene에 직접 추가하여 지구 회전과 분리
             marker = new THREE.Group(); 
             const glowMat = new THREE.SpriteMaterial({ 
                 map: createGlowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false 
@@ -258,6 +255,7 @@
                     new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 128, 0.02, 8, false),
                     new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 2 })
                 ); 
+                // scene에 직접 추가되어 지구의 자전(globe.rotation)과 상관없이 고정됨
                 scene.add(pathTube); 
                 marker.position.copy(points[points.length - 1]); 
             } 
@@ -278,28 +276,18 @@
             const name = document.getElementById('loginName').value.trim(); 
             const phone = document.getElementById('loginPhone').value.trim(); 
             if(!name || phone.length < 4) return alert("정보를 정확히 입력해주세요."); 
-            
-            currentUserId = phone;
-            currentUserName = name;
-            
-            // Firebase 구독 시작
+            currentUserId = phone; currentUserName = name;
             window.subscribeUser(phone);
-            
             document.getElementById('login-modal').classList.add('hidden'); 
-            // 데이터 로딩 대기를 위해 약간의 지연 후 모달 전환
             setTimeout(() => {
-                if (window.appData.users[currentUserId]) {
-                    showRecordModal(); 
-                } else {
-                    document.getElementById('target-modal').classList.remove('hidden'); 
-                }
+                if (window.appData.users[currentUserId]) showRecordModal(); 
+                else document.getElementById('target-modal').classList.remove('hidden'); 
             }, 500);
         } 
 
         async function processTargetSetting() { 
             const target = parseFloat(document.getElementById('targetInput').value); 
             if (!target || target <= 0) return alert("목표 거리를 입력해주세요."); 
-            
             await window.firebaseSetTarget(currentUserId, currentUserName, target);
             document.getElementById('target-modal').classList.add('hidden'); 
             showRecordModal(); 
@@ -315,15 +303,15 @@
         async function processSubmitRecord() { 
             const val = parseFloat(document.getElementById('inputKm').value); 
             if(!val || val <= 0) return alert("거리를 입력해주세요."); 
+            // 50km 제한 로직 추가
+            if(val > 50) return alert("한 번에 최대 50km까지 입력 가능합니다.");
             
             await window.firebaseAddRecord(currentUserId, val);
-            saveAndClose(); 
-            triggerSparkle();
+            saveAndClose(); triggerSparkle();
         } 
 
         function saveAndClose() { 
-            closeModals(); 
-            window.updateVisuals(); 
+            closeModals(); window.updateVisuals(); 
             document.getElementById('inputKm').value = ''; 
             document.getElementById('targetInput').value = '';
         } 
@@ -332,7 +320,7 @@
 
         function animate() { 
             requestAnimationFrame(animate); 
-            if(globe) globe.rotation.y -= 0.0005; 
+            if(globe) globe.rotation.y -= 0.0005; // 지구만 회전
             if(controls) controls.update(); 
             if(renderer) renderer.render(scene, camera); 
         } 
@@ -364,7 +352,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 전체 상태 실시간 감시
         onValue(ref(db, "state"), snap => {
             const data = snap.val();
             if(!data) return;
@@ -373,7 +360,6 @@
             window.updateVisuals?.();
         });
 
-        // 사용자 데이터 구독 함수 (전역 노출)
         window.subscribeUser = function(phone) {
             onValue(ref(db, "users/" + phone), snap => {
                 const data = snap.val();
@@ -383,27 +369,14 @@
             });
         };
 
-        // 목표 설정 저장 함수 (전역 노출)
         window.firebaseSetTarget = async function(phone, name, target) {
-            await update(ref(db, "users/" + phone), {
-                name: name,
-                target: target,
-                dist: 0
-            });
-            // 전체 목표 합산 업데이트 (트랜잭션)
-            await runTransaction(ref(db, "state/totalGoal"), cur => {
-                return (cur || 0) + target;
-            });
+            await update(ref(db, "users/" + phone), { name: name, target: target, dist: 0 });
+            await runTransaction(ref(db, "state/totalGoal"), cur => { return (cur || 0) + target; });
         };
 
-        // 기록 추가 함수 (전역 노출 - 동시성 안전)
         window.firebaseAddRecord = async function(phone, val) {
-            await runTransaction(ref(db, "users/" + phone + "/dist"), cur => {
-                return (cur || 0) + val;
-            });
-            await runTransaction(ref(db, "state/totalKm"), cur => {
-                return (cur || 0) + val;
-            });
+            await runTransaction(ref(db, "users/" + phone + "/dist"), cur => { return (cur || 0) + val; });
+            await runTransaction(ref(db, "state/totalKm"), cur => { return (cur || 0) + val; });
         };
     </script>
 </body> 
