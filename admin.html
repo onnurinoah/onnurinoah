@@ -10,6 +10,10 @@
         body { background: #00050a; color: white; font-family: 'Pretendard', sans-serif; min-height: 100vh; }
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
         input { background: rgba(255, 255, 255, 0.1) !important; color: white !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; text-align: center; }
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -19,41 +23,51 @@
             <h1 class="text-2xl font-black mb-6 text-yellow-400">ADMIN LOGIN</h1>
             <input type="text" id="adminId" placeholder="아이디" class="w-full p-3 rounded-xl mb-3 outline-none focus:border-yellow-400">
             <input type="password" id="adminPw" placeholder="비밀번호" class="w-full p-3 rounded-xl mb-6 outline-none focus:border-yellow-400">
-            <button onclick="checkLogin()" class="w-full py-3 bg-yellow-400 text-black font-black rounded-xl">접속하기</button>
+            <button onclick="checkLogin()" class="w-full py-3 bg-yellow-400 text-black font-black rounded-xl hover:bg-yellow-300 transition">접속하기</button>
         </div>
     </div>
 
-    <div id="admin-content" class="hidden">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+    <div id="admin-content" class="hidden max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
             <div>
                 <h1 class="text-3xl font-black text-yellow-400 italic">CHALLENGE ADMIN</h1>
-                <p class="text-slate-400">데이터 수정, 삭제 및 초기화가 가능합니다.</p>
+                <p class="text-slate-400">시스템 부하 테스트 및 전체 데이터 관리가 가능합니다.</p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap justify-center gap-3">
                 <button onclick="stressTest()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition">1000명 부하 테스트</button>
-                <button onclick="resetAllData()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition">전체 초기화</button>
+                <button onclick="resetAllData()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition">데이터 완전 삭제</button>
             </div>
         </div>
 
-        <div id="test-progress-container" class="hidden w-full h-2 bg-white/10 rounded-full mb-6 overflow-hidden">
-            <div id="test-progress-bar" class="h-full bg-purple-500 transition-all duration-300" style="width: 0%"></div>
+        <div id="test-status-box" class="hidden mb-10 p-6 glass rounded-2xl border-purple-500/50 border">
+            <div class="flex justify-between mb-2">
+                <span class="text-purple-400 font-bold">데이터 생성 중...</span>
+                <span id="test-percent" class="text-white font-mono">0%</span>
+            </div>
+            <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                <div id="test-progress-bar" class="h-full bg-purple-500 transition-all duration-300" style="width: 0%"></div>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 text-center">
-            <div class="glass p-6 rounded-2xl border-b-4 border-white/20">
-                <p class="text-slate-400 text-xs mb-1 uppercase font-bold tracking-widest">Global Distance</p>
-                <h2 id="total-km-display" class="text-4xl font-black">0.0 km</h2>
+            <div class="glass p-8 rounded-2xl border-b-4 border-white/20">
+                <p class="text-slate-400 text-xs mb-1 uppercase font-bold tracking-widest text-center">전체 누적 거리 (Total)</p>
+                <h2 id="total-km-display" class="text-5xl font-black">0.0 km</h2>
             </div>
-            <div class="glass p-6 rounded-2xl border-b-4 border-yellow-400/50">
-                <p class="text-slate-400 text-xs mb-1 uppercase font-bold tracking-widest">Global Goal</p>
-                <h2 id="total-goal-display" class="text-4xl font-black text-yellow-400">0 km</h2>
+            <div class="glass p-8 rounded-2xl border-b-4 border-yellow-400/50">
+                <p class="text-slate-400 text-xs mb-1 uppercase font-bold tracking-widest text-center">전체 목표 거리 (Goal)</p>
+                <h2 id="total-goal-display" class="text-5xl font-black text-yellow-400">0 km</h2>
             </div>
         </div>
 
-        <div class="glass rounded-3xl overflow-hidden">
+        <div class="glass rounded-3xl overflow-hidden mb-20">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                <h3 class="font-bold text-lg">참여자 목록</h3>
+                <span id="user-count" class="text-sm text-slate-400">Total: 0명</span>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
-                    <thead class="bg-white/10 text-slate-300 text-xs uppercase tracking-tighter">
+                    <thead class="bg-white/5 text-slate-300 text-xs uppercase tracking-tighter">
                         <tr>
                             <th class="p-4">전화번호</th>
                             <th class="p-4 text-center">이름</th>
@@ -62,7 +76,9 @@
                             <th class="p-4 text-center">관리</th>
                         </tr>
                     </thead>
-                    <tbody id="user-table-body" class="text-sm"></tbody>
+                    <tbody id="user-table-body" class="text-sm">
+                        <tr><td colspan="5" class="p-10 text-center text-slate-500 italic">로그인 후 데이터를 불러옵니다...</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -72,6 +88,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, update, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyCT1SfWun7ZfOP3JVssXzGEiR-v7ZGPv18",
             authDomain: "onnurinoah.firebaseapp.com",
@@ -85,39 +102,55 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // 로그인 확인
         window.checkLogin = function() {
-            if(document.getElementById('adminId').value === 'holyimpact' && document.getElementById('adminPw').value === '2026') {
+            const id = document.getElementById('adminId').value;
+            const pw = document.getElementById('adminPw').value;
+            if(id === 'holyimpact' && pw === '2026') {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-content').classList.remove('hidden');
                 initAdmin();
-            } else { alert('정보가 틀렸습니다.'); }
+            } else { alert('관리자 정보가 일치하지 않습니다.'); }
         }
 
+        // 초기화 및 실시간 감시
         function initAdmin() {
+            // 통계 감시
             onValue(ref(db, "state"), snap => {
                 const s = snap.val() || { totalKm: 0, totalGoal: 0 };
                 document.getElementById('total-km-display').innerText = (s.totalKm || 0).toFixed(1) + " km";
                 document.getElementById('total-goal-display').innerText = (s.totalGoal || 0).toLocaleString() + " km";
             });
 
+            // 유저 목록 감시
             onValue(ref(db, "users"), snap => {
                 const users = snap.val();
                 const tbody = document.getElementById('user-table-body');
+                const countText = document.getElementById('user-count');
                 tbody.innerHTML = "";
-                if(!users) return;
+                
+                if(!users) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-500 italic">참여자가 없습니다.</td></tr>';
+                    countText.innerText = "Total: 0명";
+                    return;
+                }
 
-                Object.keys(users).forEach(phone => {
+                const keys = Object.keys(users);
+                countText.innerText = `Total: ${keys.length}명`;
+
+                // 성능을 위해 최근 데이터 위주로 정렬하거나 너무 많으면 잘라서 표시 (테스트용이므로 전체 표시)
+                keys.forEach(phone => {
                     const u = users[phone];
                     const tr = document.createElement('tr');
-                    tr.className = "border-b border-white/5";
+                    tr.className = "border-b border-white/5 hover:bg-white/5 transition";
                     tr.innerHTML = `
                         <td class="p-4 font-mono text-yellow-500 font-bold">${phone}</td>
-                        <td class="p-2 text-center"><input type="text" id="n-${phone}" value="${u.name}" class="w-20 p-1 rounded"></td>
+                        <td class="p-2 text-center"><input type="text" id="n-${phone}" value="${u.name}" class="w-24 p-1 rounded"></td>
                         <td class="p-2 text-center"><input type="number" id="d-${phone}" value="${u.dist}" class="w-20 p-1 rounded text-yellow-400 font-bold"></td>
                         <td class="p-2 text-center"><input type="number" id="t-${phone}" value="${u.target}" class="w-20 p-1 rounded"></td>
                         <td class="p-4 text-center space-x-1">
-                            <button onclick="saveUser('${phone}')" class="bg-blue-600 px-3 py-1 rounded text-xs">수정</button>
-                            <button onclick="delUser('${phone}')" class="bg-slate-700 px-3 py-1 rounded text-xs text-red-400">삭제</button>
+                            <button onclick="saveUser('${phone}')" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-xs transition">수정</button>
+                            <button onclick="delUser('${phone}')" class="bg-slate-700 hover:bg-red-900 px-3 py-1 rounded text-xs text-red-400 transition">삭제</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -125,76 +158,83 @@
             });
         }
 
-        // 부하 테스트 함수
+        // 1000명 부하 테스트 (30 +- 10 km 랜덤)
         window.stressTest = async function() {
-            if(!confirm('🚨 가상의 사용자 1000명의 데이터를 동시에 생성합니다. 계속하시겠습니까?')) return;
+            if(!confirm('🚨 1000명의 가상 사용자 데이터를 생성합니다.\n(각 유저당 20~40km 랜덤 누적거리가 부여됩니다.)')) return;
             
-            const progressContainer = document.getElementById('test-progress-container');
+            const statusBox = document.getElementById('test-status-box');
             const progressBar = document.getElementById('test-progress-bar');
-            progressContainer.classList.remove('hidden');
+            const percentText = document.getElementById('test-percent');
             
-            const startTime = Date.now();
-            const totalBatches = 10; // 100개씩 10번
+            statusBox.classList.remove('hidden');
+            
+            const totalBatches = 10;
             const batchSize = 100;
 
             for (let i = 0; i < totalBatches; i++) {
                 const updates = {};
                 for (let j = 0; j < batchSize; j++) {
-                    const fakeId = (1000 + (i * batchSize) + j).toString(); // 가상 ID (1000~1999)
-                    const randomDist = Math.floor(Math.random() * 10) + 1; // 1~10km 랜덤
+                    const fakeId = (1000 + (i * batchSize) + j).toString();
+                    // 누적 km 30 +- 10 (20 ~ 40 km 랜덤)
+                    const randomDist = Math.floor(Math.random() * 21) + 20; 
                     updates[`users/${fakeId}`] = {
                         name: `테스터${fakeId}`,
                         dist: randomDist,
-                        target: 20
+                        target: 50
                     };
                 }
                 
-                // 묶음으로 파이어베이스 전송 (개별 전송보다 훨씬 빠르고 안정적임)
                 await update(ref(db), updates);
                 
                 const percent = ((i + 1) / totalBatches) * 100;
                 progressBar.style.width = percent + "%";
-                console.log(`${(i + 1) * batchSize}명 입력 중...`);
+                percentText.innerText = Math.round(percent) + "%";
             }
 
-            // 마지막에 합계 한 번만 다시 계산
             await recalc();
-
-            const endTime = Date.now();
-            const duration = (endTime - startTime) / 1000;
-            alert(`✅ 성공! 1000명 데이터 입력 완료 (소요시간: ${duration}초)`);
-            progressContainer.classList.add('hidden');
+            alert(`✅ 테스트 데이터 생성 완료!`);
+            statusBox.classList.add('hidden');
             progressBar.style.width = "0%";
         };
 
+        // 개별 수정
         window.saveUser = async (phone) => {
             const name = document.getElementById(`n-${phone}`).value;
             const dist = parseFloat(document.getElementById(`d-${phone}`).value);
             const target = parseFloat(document.getElementById(`t-${phone}`).value);
             await update(ref(db, `users/${phone}`), { name, dist, target });
             await recalc();
-            alert('수정완료');
+            alert('정보가 수정되었습니다.');
         };
 
+        // 개별 삭제
         window.delUser = async (phone) => {
-            if(confirm('삭제할까요?')) {
+            if(confirm('이 유저를 목록에서 삭제하시겠습니까?')) {
                 await remove(ref(db, `users/${phone}`));
                 await recalc();
             }
         };
 
+        // 전체 데이터 완전 삭제 (보완됨)
         window.resetAllData = async () => {
-            if(confirm('🚨 모든 데이터를 정말로 초기화하시겠습니까?')) {
-                await set(ref(db, "/"), {
-                    state: { totalKm: 0, totalGoal: 0 },
-                    users: null
-                });
-                alert('초기화 완료');
-                location.reload();
+            const input = confirm('🚨🚨🚨 경고! 모든 유저 정보와 통계 데이터가 [영구 삭제]됩니다. 정말 초기화하시겠습니까?');
+            if(input) {
+                try {
+                    // 데이터베이스 루트(/)에 초기 구조 강제 덮어쓰기
+                    await set(ref(db, "/"), {
+                        state: { totalKm: 0, totalGoal: 0 },
+                        users: {} // 빈 객체로 설정하여 모든 하위 유저 노드 삭제
+                    });
+                    
+                    alert('데이터베이스가 완전히 깨끗하게 비워졌습니다.');
+                    location.reload();
+                } catch (e) {
+                    alert('초기화 중 오류가 발생했습니다: ' + e.message);
+                }
             }
         };
 
-        // 전체 합계 재계산 로직 (한 번만 실행되도록 최적화)
+        // 합계 재계산 로직
         async function recalc() {
             const snap = await get(ref(db, "users"));
             const users = snap.val();
