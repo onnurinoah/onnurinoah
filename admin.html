@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>관리자 페이지 - 걸어서 지구 한바퀴</title>
+    <title>관리자 - 걸어서 지구 한바퀴</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
         body { background: #00050a; color: white; font-family: 'Pretendard', sans-serif; min-height: 100vh; }
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        input { background: rgba(255, 255, 255, 0.1) !important; color: white !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; }
+        input { background: rgba(255, 255, 255, 0.1) !important; color: white !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; text-align: center; }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -26,22 +26,19 @@
     <div id="admin-content" class="hidden">
         <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
             <div>
-                <h1 class="text-3xl font-black text-yellow-400">챌린지 관리자</h1>
-                <p class="text-slate-400 text-sm">사용자 데이터를 수정하거나 삭제할 수 있습니다.</p>
+                <h1 class="text-3xl font-black text-yellow-400 italic">CHALLENGE ADMIN</h1>
+                <p class="text-slate-400">데이터 수정, 삭제 및 초기화가 가능합니다.</p>
             </div>
-            <div class="flex gap-3">
-                <button onclick="resetAllData()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition">전체 데이터 초기화</button>
-                <button onclick="location.reload()" class="px-6 py-3 glass font-bold rounded-xl">새로고침</button>
-            </div>
+            <button onclick="resetAllData()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition">전체 데이터 초기화</button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <div class="glass p-6 rounded-2xl">
-                <p class="text-slate-400 text-sm mb-1">전체 누적 거리</p>
-                <h2 id="total-km-display" class="text-4xl font-black text-white">0 km</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 text-center">
+            <div class="glass p-6 rounded-2xl border-b-4 border-white/20">
+                <p class="text-slate-400 text-xs mb-1 uppercase font-bold tracking-widest">Global Distance</p>
+                <h2 id="total-km-display" class="text-4xl font-black">0.0 km</h2>
             </div>
-            <div class="glass p-6 rounded-2xl">
-                <p class="text-slate-400 text-sm mb-1">전체 목표 거리</p>
+            <div class="glass p-6 rounded-2xl border-b-4 border-yellow-400/50">
+                <p class="text-slate-400 text-xs mb-1 uppercase font-bold tracking-widest">Global Goal</p>
                 <h2 id="total-goal-display" class="text-4xl font-black text-yellow-400">0 km</h2>
             </div>
         </div>
@@ -49,16 +46,16 @@
         <div class="glass rounded-3xl overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-white/10 text-slate-300 text-sm">
-                            <th class="p-4 font-bold">전화번호(ID)</th>
-                            <th class="p-4 font-bold">이름</th>
-                            <th class="p-4 font-bold">누적(km)</th>
-                            <th class="p-4 font-bold">목표(km)</th>
-                            <th class="p-4 font-bold text-center">관리</th>
+                    <thead class="bg-white/10 text-slate-300 text-xs uppercase tracking-tighter">
+                        <tr>
+                            <th class="p-4">전화번호</th>
+                            <th class="p-4 text-center">이름</th>
+                            <th class="p-4 text-center">누적(km)</th>
+                            <th class="p-4 text-center">목표(km)</th>
+                            <th class="p-4 text-center">관리</th>
                         </tr>
                     </thead>
-                    <tbody id="user-table-body">
+                    <tbody id="user-table-body" class="text-sm">
                         </tbody>
                 </table>
             </div>
@@ -69,7 +66,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 기존 설정을 그대로 사용합니다
         const firebaseConfig = {
             apiKey: "AIzaSyCT1SfWun7ZfOP3JVssXzGEiR-v7ZGPv18",
             authDomain: "onnurinoah.firebaseapp.com",
@@ -83,106 +79,79 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 로그인 확인 함수
         window.checkLogin = function() {
-            const id = document.getElementById('adminId').value;
-            const pw = document.getElementById('adminPw').value;
-            if(id === 'holyimpact' && pw === '2026') {
+            if(document.getElementById('adminId').value === 'holyimpact' && document.getElementById('adminPw').value === '2026') {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-content').classList.remove('hidden');
-                loadData();
-            } else {
-                alert('로그인 정보가 일치하지 않습니다.');
-            }
+                initAdmin();
+            } else { alert('정보가 틀렸습니다.'); }
         }
 
-        function loadData() {
-            // 전체 통계 로드
+        function initAdmin() {
             onValue(ref(db, "state"), snap => {
-                const data = snap.val() || { totalKm: 0, totalGoal: 0 };
-                document.getElementById('total-km-display').innerText = `${data.totalKm.toLocaleString()} km`;
-                document.getElementById('total-goal-display').innerText = `${data.totalGoal.toLocaleString()} km`;
+                const s = snap.val() || { totalKm: 0, totalGoal: 0 };
+                document.getElementById('total-km-display').innerText = s.totalKm.toFixed(1) + " km";
+                document.getElementById('total-goal-display').innerText = s.totalGoal.toLocaleString() + " km";
             });
 
-            // 사용자 목록 로드
             onValue(ref(db, "users"), snap => {
                 const users = snap.val();
                 const tbody = document.getElementById('user-table-body');
                 tbody.innerHTML = "";
+                if(!users) return;
 
-                if(!users) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-500">등록된 사용자가 없습니다.</td></tr>`;
-                    return;
-                }
-
-                for(let phone in users) {
+                Object.keys(users).forEach(phone => {
                     const u = users[phone];
                     const tr = document.createElement('tr');
-                    tr.className = "border-b border-white/5 hover:bg-white/5 transition";
+                    tr.className = "border-b border-white/5";
                     tr.innerHTML = `
-                        <td class="p-4 font-mono text-yellow-500">${phone}</td>
-                        <td class="p-4"><input type="text" value="${u.name}" id="name-${phone}" class="bg-transparent p-2 rounded-lg w-24"></td>
-                        <td class="p-4"><input type="number" value="${u.dist}" id="dist-${phone}" class="bg-transparent p-2 rounded-lg w-24"></td>
-                        <td class="p-4"><input type="number" value="${u.target}" id="target-${phone}" class="bg-transparent p-2 rounded-lg w-24"></td>
-                        <td class="p-4 text-center space-x-2">
-                            <button onclick="window.updateUser('${phone}')" class="px-3 py-1 bg-blue-600 text-xs font-bold rounded-md">수정</button>
-                            <button onclick="window.deleteUser('${phone}')" class="px-3 py-1 bg-red-600 text-xs font-bold rounded-md">삭제</button>
+                        <td class="p-4 font-mono text-yellow-500 font-bold">${phone}</td>
+                        <td class="p-2 text-center"><input type="text" id="n-${phone}" value="${u.name}" class="w-20 p-1 rounded"></td>
+                        <td class="p-2 text-center"><input type="number" id="d-${phone}" value="${u.dist}" class="w-20 p-1 rounded text-yellow-400 font-bold"></td>
+                        <td class="p-2 text-center"><input type="number" id="t-${phone}" value="${u.target}" class="w-20 p-1 rounded"></td>
+                        <td class="p-4 text-center space-x-1">
+                            <button onclick="saveUser('${phone}')" class="bg-blue-600 px-3 py-1 rounded text-xs">수정</button>
+                            <button onclick="delUser('${phone}')" class="bg-slate-700 px-3 py-1 rounded text-xs text-red-400">삭제</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
-                }
+                });
             });
         }
 
-        // 개별 사용자 수정
-        window.updateUser = async function(phone) {
-            const newName = document.getElementById(`name-${phone}`).value;
-            const newDist = parseFloat(document.getElementById(`dist-${phone}`).value);
-            const newTarget = parseFloat(document.getElementById(`target-${phone}`).value);
+        window.saveUser = async (phone) => {
+            const name = document.getElementById(`n-${phone}`).value;
+            const dist = parseFloat(document.getElementById(`d-${phone}`).value);
+            const target = parseFloat(document.getElementById(`t-${phone}`).value);
+            await update(ref(db, `users/${phone}`), { name, dist, target });
+            await recalc();
+            alert('수정완료');
+        };
 
-            if(confirm(`${phone} 사용자의 정보를 수정하시겠습니까?`)) {
-                await update(ref(db, `users/${phone}`), {
-                    name: newName,
-                    dist: newDist,
-                    target: newTarget
-                });
-                alert('수정되었습니다. (총 합계는 새로고침 시 재계산이 필요할 수 있습니다.)');
-                recalculateTotals();
-            }
-        }
-
-        // 개별 사용자 삭제
-        window.deleteUser = async function(phone) {
-            if(confirm('정말로 이 사용자를 삭제하시겠습니까? 기록에서 영구 삭제됩니다.')) {
+        window.delUser = async (phone) => {
+            if(confirm('삭제할까요?')) {
                 await remove(ref(db, `users/${phone}`));
-                recalculateTotals();
+                await recalc();
             }
-        }
+        };
 
-        // 전체 초기화
-        window.resetAllData = async function() {
-            if(confirm('🚨 주의! 모든 사용자 데이터와 누적 기록이 0으로 초기화됩니다. 계속하시겠습니까?')) {
+        window.resetAllData = async () => {
+            if(confirm('🚨 모든 데이터를 정말로 초기화하시겠습니까?')) {
                 await set(ref(db, "/"), {
                     state: { totalKm: 0, totalGoal: 0 },
-                    users: {}
+                    users: null
                 });
-                alert('모든 데이터가 초기화되었습니다.');
+                alert('초기화 완료');
+                location.reload();
             }
-        }
+        };
 
-        // 총 합계 재계산 기능 (수정/삭제 시 호출)
-        async function recalculateTotals() {
+        async function recalc() {
             onValue(ref(db, "users"), snap => {
                 const users = snap.val();
-                let tKm = 0;
-                let tGoal = 0;
-                if(users) {
-                    for(let p in users) {
-                        tKm += (users[p].dist || 0);
-                        tGoal += (users[p].target || 0);
-                    }
-                }
-                update(ref(db, "state"), { totalKm: tKm, totalGoal: tGoal });
+                let km = 0, goal = 0;
+                if(users) Object.values(users).forEach(u => { km += u.dist; goal += u.target; });
+                update(ref(db, "state"), { totalKm: km, totalGoal: goal });
             }, { onlyOnce: true });
         }
     </script>
