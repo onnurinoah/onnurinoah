@@ -29,7 +29,14 @@
                 <h1 class="text-3xl font-black text-yellow-400 italic">CHALLENGE ADMIN</h1>
                 <p class="text-slate-400">데이터 수정, 삭제 및 초기화가 가능합니다.</p>
             </div>
-            <button onclick="resetAllData()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition">전체 데이터 초기화</button>
+            <div class="flex gap-2">
+                <button onclick="stressTest()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition">1000명 부하 테스트</button>
+                <button onclick="resetAllData()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transition">전체 초기화</button>
+            </div>
+        </div>
+
+        <div id="test-progress-container" class="hidden w-full h-2 bg-white/10 rounded-full mb-6 overflow-hidden">
+            <div id="test-progress-bar" class="h-full bg-purple-500 transition-all duration-300" style="width: 0%"></div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 text-center">
@@ -55,8 +62,7 @@
                             <th class="p-4 text-center">관리</th>
                         </tr>
                     </thead>
-                    <tbody id="user-table-body" class="text-sm">
-                        </tbody>
+                    <tbody id="user-table-body" class="text-sm"></tbody>
                 </table>
             </div>
         </div>
@@ -64,7 +70,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, update, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCT1SfWun7ZfOP3JVssXzGEiR-v7ZGPv18",
@@ -90,8 +96,8 @@
         function initAdmin() {
             onValue(ref(db, "state"), snap => {
                 const s = snap.val() || { totalKm: 0, totalGoal: 0 };
-                document.getElementById('total-km-display').innerText = s.totalKm.toFixed(1) + " km";
-                document.getElementById('total-goal-display').innerText = s.totalGoal.toLocaleString() + " km";
+                document.getElementById('total-km-display').innerText = (s.totalKm || 0).toFixed(1) + " km";
+                document.getElementById('total-goal-display').innerText = (s.totalGoal || 0).toLocaleString() + " km";
             });
 
             onValue(ref(db, "users"), snap => {
@@ -118,6 +124,48 @@
                 });
             });
         }
+
+        // 부하 테스트 함수
+        window.stressTest = async function() {
+            if(!confirm('🚨 가상의 사용자 1000명의 데이터를 동시에 생성합니다. 계속하시겠습니까?')) return;
+            
+            const progressContainer = document.getElementById('test-progress-container');
+            const progressBar = document.getElementById('test-progress-bar');
+            progressContainer.classList.remove('hidden');
+            
+            const startTime = Date.now();
+            const totalBatches = 10; // 100개씩 10번
+            const batchSize = 100;
+
+            for (let i = 0; i < totalBatches; i++) {
+                const updates = {};
+                for (let j = 0; j < batchSize; j++) {
+                    const fakeId = (1000 + (i * batchSize) + j).toString(); // 가상 ID (1000~1999)
+                    const randomDist = Math.floor(Math.random() * 10) + 1; // 1~10km 랜덤
+                    updates[`users/${fakeId}`] = {
+                        name: `테스터${fakeId}`,
+                        dist: randomDist,
+                        target: 20
+                    };
+                }
+                
+                // 묶음으로 파이어베이스 전송 (개별 전송보다 훨씬 빠르고 안정적임)
+                await update(ref(db), updates);
+                
+                const percent = ((i + 1) / totalBatches) * 100;
+                progressBar.style.width = percent + "%";
+                console.log(`${(i + 1) * batchSize}명 입력 중...`);
+            }
+
+            // 마지막에 합계 한 번만 다시 계산
+            await recalc();
+
+            const endTime = Date.now();
+            const duration = (endTime - startTime) / 1000;
+            alert(`✅ 성공! 1000명 데이터 입력 완료 (소요시간: ${duration}초)`);
+            progressContainer.classList.add('hidden');
+            progressBar.style.width = "0%";
+        };
 
         window.saveUser = async (phone) => {
             const name = document.getElementById(`n-${phone}`).value;
@@ -146,13 +194,18 @@
             }
         };
 
+        // 전체 합계 재계산 로직 (한 번만 실행되도록 최적화)
         async function recalc() {
-            onValue(ref(db, "users"), snap => {
-                const users = snap.val();
-                let km = 0, goal = 0;
-                if(users) Object.values(users).forEach(u => { km += u.dist; goal += u.target; });
-                update(ref(db, "state"), { totalKm: km, totalGoal: goal });
-            }, { onlyOnce: true });
+            const snap = await get(ref(db, "users"));
+            const users = snap.val();
+            let km = 0, goal = 0;
+            if(users) {
+                Object.values(users).forEach(u => { 
+                    km += (parseFloat(u.dist) || 0); 
+                    goal += (parseFloat(u.target) || 0); 
+                });
+            }
+            await update(ref(db, "state"), { totalKm: km, totalGoal: goal });
         }
     </script>
 </body>
