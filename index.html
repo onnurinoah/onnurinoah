@@ -1,365 +1,406 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>선교 적성 검사 (Mission MBTI)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-        .circle-btn { transition: all 0.2s; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: white; margin: 0 auto; }
-        .circle-btn:active { transform: scale(0.9); background-color: #e0e7ff; }
-        .circle-lg { width: 56px; height: 56px; border: 2px solid #e2e8f0; }
-        .circle-sm { width: 44px; height: 44px; border: 2px solid #e2e8f0; }
-        .scenario-box { padding: 18px; border-radius: 1.25rem; background-color: #ffffff; border: 1px solid #e2e8f0; }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .type-img-shadow { filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1)); }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+<!DOCTYPE html> 
+<html lang="ko"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+    <title>걸어서 지구 한바퀴 - 라이브 챌린지</title> 
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script> 
+    <style> 
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Pretendard:wght@400;700;900&display=swap'); 
+        body { 
+            margin: 0; 
+            background: #00050a; 
+            color: white; 
+            font-family: 'Pretendard', sans-serif; 
+            overflow: hidden; 
+            height: 100dvh; 
+            touch-action: none; 
+        } 
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; } 
+        .ui-overlay { position: relative; z-index: 10; pointer-events: none; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 1.5rem 1rem; } 
+        .interactive { pointer-events: auto; } 
+        .title-font { font-family: 'Black Han Sans', sans-serif; } 
+        .glass { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); } 
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; } 
+        
+        @media (max-width: 380px) {
+            .dist-text { font-size: 3.5rem !important; }
+            .dist-fraction { font-size: 2rem !important; }
+        }
+    </style> 
+</head> 
+<body> 
 
-    <button onclick="toggleFullScreen()" class="fixed top-4 right-4 z-50 bg-white/80 backdrop-blur-sm p-3 rounded-2xl shadow-sm border border-gray-100 active:scale-90 transition-all hover:bg-white">
-        <svg id="fs-icon" class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
-        </svg>
-    </button>
+    <div id="canvas-container"></div> 
 
-    <div id="start-screen" class="max-w-md w-full text-center fade-in">
-        <div class="mb-6 text-6xl">🧬</div>
-        <h1 class="text-3xl font-black text-gray-900 mb-4 tracking-tight">선교 적성 검사</h1>
-        <p class="text-gray-500 mb-8 leading-relaxed px-6 text-sm">나의 선교적 성향을 확인하고<br>나와 가장 잘 맞는 동역자를 찾아보세요.</p>
-        <button onclick="startTest()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-lg shadow-xl active:scale-95 hover:bg-indigo-700 transition-all">검사 시작하기</button>
-    </div>
-
-    <div id="question-screen" class="max-w-md w-full hidden">
-        <div class="mb-6 px-2">
-            <div class="flex justify-between text-[11px] text-gray-400 mb-2 font-bold uppercase tracking-widest">
-                <span id="progress-text">1 / 20</span>
-                <span class="text-indigo-500 font-black">Missionary Test</span>
-            </div>
-            <div class="w-full bg-gray-200 h-1 rounded-full overflow-hidden">
-                <div id="progress-bar" class="bg-indigo-500 h-full transition-all duration-300" style="width: 5%"></div>
-            </div>
-        </div>
-
-        <div id="question-container" class="bg-white rounded-[2.5rem] p-7 shadow-sm border border-gray-100 fade-in">
-            <div class="text-center mb-6">
-                <span class="inline-block bg-indigo-50 text-indigo-600 text-[12px] font-bold px-4 py-1.5 rounded-full mb-3 italic">만약에...</span>
-                <h2 id="scenario-text" class="text-xl font-extrabold text-gray-900 leading-snug"></h2>
-            </div>
-            <div class="flex flex-col gap-6">
-                <div class="scenario-box border-l-4 border-l-indigo-400"><p id="option-a-text" class="text-center text-gray-800 font-bold text-[15px]"></p></div>
-                <div class="flex flex-col gap-4 py-2">
-                    <button onclick="handleAnswer(2, 'left')" class="flex flex-col items-center gap-1"><div class="circle-btn circle-lg"></div><span class="text-[10px] text-gray-400 font-bold">매우 그렇다</span></button>
-                    <button onclick="handleAnswer(1, 'left')" class="flex flex-col items-center gap-1"><div class="circle-btn circle-sm"></div><span class="text-[10px] text-gray-400 font-bold">약간 그렇다</span></button>
-                    <button onclick="handleAnswer(1, 'right')" class="flex flex-col items-center gap-1"><div class="circle-btn circle-sm"></div><span class="text-[10px] text-gray-400 font-bold">약간 그렇다</span></button>
-                    <button onclick="handleAnswer(2, 'right')" class="flex flex-col items-center gap-1"><div class="circle-btn circle-lg"></div><span class="text-[10px] text-gray-400 font-bold">매우 그렇다</span></button>
-                </div>
-                <div class="scenario-box border-l-4 border-l-gray-300"><p id="option-b-text" class="text-center text-gray-800 font-bold text-[15px]"></p></div>
-            </div>
-            <div class="flex justify-start mt-8 pt-4 border-t border-gray-50">
-                <button id="prev-btn" onclick="goBack()" class="text-gray-400 hover:text-indigo-600 flex items-center gap-1 text-xs font-bold uppercase tracking-tighter">PREV</button>
-            </div>
+    <div class="fixed top-4 left-4 z-20 scale-90 origin-top-left md:scale-100">
+        <div class="glass px-5 py-2 rounded-2xl border-l-4 border-l-red-500">
+            <p class="text-[10px] text-red-400 font-bold tracking-widest mb-0.5">COUNTDOWN</p>
+            <div id="d-day-text" class="title-font text-3xl text-white italic">D-00</div>
         </div>
     </div>
 
-    <div id="loading-screen" class="max-w-md w-full hidden text-center fade-in">
-        <div class="mb-8 text-7xl animate-bounce">✨</div>
-        <h2 class="text-2xl font-black text-gray-900 mb-2">분석이 완료되었습니다!</h2>
-        <p class="text-gray-500 mb-10 text-sm">당신의 선교 DNA가 담긴<br>놀라운 결과를 확인해보세요.</p>
-        <button onclick="showResult()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-bold text-xl shadow-2xl hover:bg-indigo-700 active:scale-95 transition-all">결과 확인하기</button>
-    </div>
+    <div class="fixed top-4 right-4 z-20 flex flex-col items-end gap-3 scale-90 origin-top-right md:scale-100"> 
+        <div class="glass p-4 rounded-2xl text-right min-w-[150px]"> 
+            <p class="text-[10px] text-yellow-400/80 font-bold tracking-widest mb-1">전체 목표기록</p> 
+            <div id="global-target-display" class="title-font text-xl text-white italic">0 km</div> 
+        </div> 
 
-    <div id="result-screen" class="max-w-md w-full hidden fade-in py-6">
-        <div class="bg-white rounded-[3rem] p-8 shadow-2xl border border-indigo-50 text-center relative">
-            <h3 class="text-indigo-500 font-bold mb-6 uppercase tracking-[0.3em] text-[10px]">Your Mission Type</h3>
-            <div class="flex justify-center mb-6"><img id="result-img" src="" alt="Type Image" class="w-48 h-auto type-img-shadow"></div>
+        <div id="personal-stat-card" class="opacity-0 transform translate-x-10 transition-all duration-700"> 
+            <div class="glass p-4 rounded-2xl border-r-4 border-r-yellow-400 text-right min-w-[180px]"> 
+                <p class="text-yellow-400 font-black text-[10px] tracking-widest mb-1 uppercase">내 기록</p> 
+                <div class="space-y-1"> 
+                    <div class="flex items-baseline justify-end gap-1"> 
+                        <span id="my-dist-text" class="title-font text-2xl">0.00</span> 
+                        <span class="text-[10px] text-slate-400">/ <span id="my-target-text">0</span> km</span> 
+                    </div> 
+                    <div class="flex items-center justify-end gap-2"> 
+                        <span id="my-percent-text" class="text-xs font-black text-yellow-400 italic">0%</span> 
+                        <div class="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden"> 
+                            <div id="my-progress-bar" class="h-full bg-yellow-400" style="width: 0%"></div> 
+                        </div> 
+                    </div> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+
+    <div class="ui-overlay"> 
+        <div class="text-center pt-20 md:pt-10"> 
+            <div class="flex flex-col items-center justify-center gap-1 mb-2">
+                <p class="text-yellow-400 text-base md:text-xl font-bold tracking-[0.3em] title-font">누적 거리</p>
+                <span class="text-[10px] md:text-sm text-white/50 font-bold">(지구 둘레 40,075km)</span>
+            </div>
+            <div class="flex flex-col items-center"> 
+                <div id="dist-container" class="title-font text-6xl md:text-9xl tracking-tighter flex items-baseline dist-text">
+                    <span id="dist-integer">0</span>
+                    <span id="dist-fraction" class="text-3xl md:text-7xl">.0</span>
+                    <span id="dist-unit" class="text-3xl md:text-7xl ml-1 italic text-slate-500">km</span>
+                </div> 
+                <div class="mt-2 md:mt-4"> 
+                    <div id="percent-text" class="text-3xl md:text-4xl font-black text-white">0.00%</div> 
+                    <div class="w-48 md:w-64 h-1.5 bg-white/10 rounded-full mt-3 mx-auto overflow-hidden"> 
+                        <div id="global-progress-bar" class="h-full bg-yellow-400 shadow-[0_0_15px_#fbbf24]" style="width: 0%"></div> 
+                    </div> 
+                </div> 
+            </div> 
+        </div> 
+
+        <div class="w-full max-w-xs mx-auto pb-8 md:pb-10 px-4"> 
+            <button onclick="openLoginModal()" class="interactive w-full py-4 md:py-5 bg-white text-black rounded-2xl font-black text-lg md:text-xl shadow-2xl active:scale-95 transition-transform"> 
+                기록 추가하기 
+            </button> 
+        </div> 
+    </div> 
+
+    <div id="modal-backdrop" class="fixed inset-0 z-50 hidden flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl"> 
+        <div id="login-modal" class="interactive glass w-full max-w-sm p-6 md:p-8 rounded-[30px] md:rounded-[40px] text-white text-center"> 
+            <h3 class="title-font text-2xl md:text-3xl mb-6 text-yellow-400">본인 확인</h3> 
+            <div class="space-y-4"> 
+                <input type="text" id="loginName" placeholder="이름" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-yellow-400 font-bold text-center"> 
+                <input type="number" id="loginPhone" placeholder="휴대폰 뒷 4자리" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-yellow-400 font-bold text-center"> 
+            </div> 
+            <div class="flex gap-4 mt-6"> 
+                <button onclick="closeModals()" class="flex-1 py-4 text-slate-400 font-bold">취소</button> 
+                <button onclick="processLogin()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">확인</button> 
+            </div> 
+        </div> 
+
+        <div id="target-modal" class="interactive glass w-full max-w-sm p-6 md:p-8 rounded-[30px] md:rounded-[40px] text-white text-center hidden"> 
+            <h3 class="title-font text-2xl mb-2 text-yellow-400">목표 설정</h3> 
+            <p class="text-slate-400 text-[10px] mb-8 uppercase tracking-widest font-bold">도전 목표 거리를 입력하세요</p> 
+            <div class="relative mb-10">
+                <input type="number" id="targetInput" placeholder="0" class="w-full bg-transparent border-b-2 border-yellow-400 outline-none text-5xl font-black text-center text-yellow-400 p-2"> 
+                <span class="absolute right-0 bottom-2 text-yellow-400 font-bold">km</span>
+            </div>
+            <button onclick="processTargetSetting()" class="w-full py-5 bg-yellow-400 text-black rounded-2xl font-black text-lg">도전 시작하기</button> 
+        </div> 
+
+        <div id="record-modal" class="interactive glass w-full max-w-sm p-6 md:p-8 rounded-[30px] md:rounded-[40px] text-white text-center hidden"> 
+            <h3 id="modal-user-title" class="title-font text-2xl md:text-3xl mb-1 text-yellow-400">사용자님</h3> 
+            <p class="text-slate-500 text-[10px] mb-8 uppercase tracking-widest font-bold italic">얼마나 걷거나 뛰셨나요? (최대 50km)</p> 
+            <div class="relative mb-10">
+                <input type="number" id="inputKm" step="0.1" max="50" placeholder="0.0" class="w-full bg-transparent border-b-2 border-yellow-400 outline-none text-5xl md:text-6xl font-black text-center text-yellow-400 p-2"> 
+                <span class="absolute right-0 bottom-2 text-yellow-400 font-bold text-xl">km</span>
+            </div>
+            <div class="flex gap-4"> 
+                <button onclick="closeModals()" class="flex-1 py-4 text-slate-400 font-bold">취소</button> 
+                <button onclick="processSubmitRecord()" class="flex-1 py-4 bg-yellow-400 text-black rounded-2xl font-black">기록 저장</button> 
+            </div> 
+        </div> 
+    </div> 
+
+    <script> 
+        let scene, camera, renderer, globe, marker, controls, pathTube; 
+        const EARTH_CIRCUMFERENCE = 40075;  
+        const GLOBE_RADIUS = 2; 
+        const PATH_RADIUS = 2.15; 
+        
+        window.appData = { users: {}, totalKm: 0, totalGoal: 0 };
+        let visualData = { totalKm: 0, totalGoal: 0, personalDist: 0, personalTarget: 0 };
+        let currentUserId = null; 
+        let currentUserName = "";
+
+        function createGlowTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+            gradient.addColorStop(0, 'rgba(255, 220, 100, 1)');
+            gradient.addColorStop(0.2, 'rgba(255, 180, 50, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 128, 128);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function init3D() { 
+            scene = new THREE.Scene(); 
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); 
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); 
+            renderer.setSize(window.innerWidth, window.innerHeight); 
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
+            document.getElementById('canvas-container').appendChild(renderer.domElement); 
+
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2)); 
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.5); 
+            sunLight.position.set(5, 3, 5); 
+            scene.add(sunLight); 
+
+            const textureLoader = new THREE.TextureLoader(); 
+            const earthTexture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'); 
+            globe = new THREE.Mesh( 
+                new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64),  
+                new THREE.MeshStandardMaterial({ map: earthTexture, roughness: 0.4, metalness: 0.4 }) 
+            ); 
+            scene.add(globe); 
+
+            marker = new THREE.Group(); 
+            const glowMat = new THREE.SpriteMaterial({ 
+                map: createGlowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false 
+            });
+            const glow = new THREE.Sprite(glowMat); 
+            glow.scale.set(1.5, 1.5, 1); 
+            marker.add(glow); 
+            scene.add(marker); 
+
+            camera.position.z = 6; 
+            controls = new THREE.OrbitControls(camera, renderer.domElement); 
+            controls.enableDamping = true; controls.enableZoom = false; 
+
+            updateDDay(); animate(); 
+        } 
+
+        function updateDDay() {
+            const target = new Date('2026-06-19T00:00:00');
+            const diff = target - new Date();
+            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('d-day-text').innerText = days > 0 ? `D-${days}` : (days === 0 ? "D-Day" : `D+${Math.abs(days)}`);
+        }
+
+        window.updateVisuals = function(immediate = false) { 
+            const duration = immediate ? 0 : 2.5; 
             
-            <div id="result-code" class="text-5xl font-black text-indigo-900 mb-2 italic tracking-tighter">TYPE</div>
-            <div id="result-keywords" class="flex justify-center gap-1.5 mb-6 overflow-x-hidden whitespace-nowrap"></div>
+            // 전역 기록 업데이트
+            gsap.to(visualData, {
+                totalKm: window.appData.totalKm, 
+                totalGoal: window.appData.totalGoal,
+                duration: duration, ease: "power2.out",
+                onUpdate: () => {
+                    const globalRatio = visualData.totalGoal > 0 ? Math.min(visualData.totalKm / visualData.totalGoal, 1) : 0;
+                    const parts = visualData.totalKm.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}).split('.');
+                    document.getElementById('dist-integer').innerText = parts[0];
+                    document.getElementById('dist-fraction').innerText = "." + parts[1];
+                    document.getElementById('percent-text').innerText = (globalRatio * 100).toFixed(2) + "%"; 
+                    document.getElementById('global-progress-bar').style.width = (globalRatio * 100) + "%"; 
+                    document.getElementById('global-target-display').innerText = Math.floor(visualData.totalGoal).toLocaleString() + " km"; 
+                    renderPath(visualData.totalKm);
+                }
+            });
 
-            <h2 id="result-title" class="text-2xl font-bold text-gray-800 mb-2 px-4 leading-tight"></h2>
-            <p id="result-summary" class="text-indigo-600 font-bold text-[14px] mb-8 px-4 break-keep"></p>
-            
-            <div class="text-left bg-gray-50 p-6 rounded-[2rem] border border-white shadow-inner mb-10">
-                <h4 class="text-indigo-900 font-bold text-sm mb-3">유형 상세 분석</h4>
-                <p id="result-desc" class="text-[14px] text-gray-600 leading-[1.7] whitespace-pre-wrap break-keep"></p>
-            </div>
-
-            <div class="text-left mb-10 space-y-4">
-                <h4 class="text-lg font-bold text-gray-900 px-2 flex items-center gap-2">🔍 선교 스타일 가이드 (전체)</h4>
-                <div id="category-details" class="space-y-6"></div>
-            </div>
-
-            <div class="text-left mb-12 px-2">
-                <h4 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">🤝 나의 베스트 동역자</h4>
-                <div id="companion-list" class="space-y-6"></div>
-            </div>
-
-            <div id="all-types-section" class="hidden md:block mb-4">
-                <button onclick="toggleAllTypes()" class="w-full bg-indigo-50 text-indigo-700 py-4 rounded-2xl font-bold hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm">
-                    전체 16가지 유형 한눈에 보기 (PC 전용)
-                </button>
-            </div>
-
-            <button onclick="location.reload()" class="w-full bg-gray-100 text-gray-600 py-4 rounded-2xl font-bold hover:bg-gray-200 transition-all">다시 테스트하기</button>
-        </div>
-    </div>
-
-    <div id="all-types-modal" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-6 opacity-0 transition-opacity duration-300">
-        <div class="bg-white w-full max-w-6xl max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden transform scale-95 transition-transform duration-300" id="modal-content">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
-                <h2 class="text-2xl font-black text-gray-900 tracking-tight">선교 DNA 16가지 전체 유형</h2>
-                <button onclick="toggleAllTypes()" class="text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-200 transition-colors">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 bg-gray-50/50" id="all-types-grid">
-                </div>
-        </div>
-    </div>
-
-    <script>
-        // 전체화면 토글 함수
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.warn(`전체화면 모드를 시작할 수 없습니다: ${err.message}`);
+            // 내 기록 업데이트 (로그인 상태일 때만)
+            if (currentUserId && window.appData.users[currentUserId]) { 
+                const u = window.appData.users[currentUserId]; 
+                gsap.to(visualData, {
+                    personalDist: u.dist || 0, 
+                    personalTarget: u.target || 0,
+                    duration: duration, ease: "power2.out",
+                    onUpdate: () => {
+                        const myRatio = visualData.personalTarget > 0 ? Math.min(visualData.personalDist / visualData.personalTarget, 1) : 0; 
+                        document.getElementById('my-dist-text').innerText = visualData.personalDist.toLocaleString(undefined, {minimumFractionDigits: 2}); 
+                        document.getElementById('my-target-text').innerText = Math.floor(visualData.personalTarget).toLocaleString(); 
+                        document.getElementById('my-percent-text').innerText = Math.floor(myRatio * 100) + "%"; 
+                        document.getElementById('my-progress-bar').style.width = (myRatio * 100) + "%"; 
+                    }
                 });
+                document.getElementById('personal-stat-card').classList.remove('opacity-0', 'translate-x-10');
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+                // 로그아웃 상태면 카드 숨김
+                document.getElementById('personal-stat-card').classList.add('opacity-0', 'translate-x-10');
             }
+        } 
+
+        function renderPath(km) {
+            const earthRatio = Math.min(km / EARTH_CIRCUMFERENCE, 1);
+            if (pathTube) { scene.remove(pathTube); pathTube.geometry.dispose(); pathTube.material.dispose(); } 
+            if (earthRatio > 0) { 
+                const points = []; 
+                const segments = Math.max(2, Math.floor(earthRatio * 400)); 
+                for (let i = 0; i <= segments; i++) { 
+                    const pRatio = (i / segments) * earthRatio; 
+                    const angle = Math.PI - (pRatio * Math.PI * 2); 
+                    points.push(new THREE.Vector3(Math.cos(angle) * PATH_RADIUS, Math.sin(angle) * PATH_RADIUS, 0)); 
+                } 
+                pathTube = new THREE.Mesh(
+                    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 128, 0.02, 8, false),
+                    new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 2 })
+                ); 
+                scene.add(pathTube); 
+                marker.position.copy(points[points.length - 1]); 
+            } 
         }
 
-        // 전체 유형 모달 토글 및 렌더링 함수
-        function toggleAllTypes() {
-            const modal = document.getElementById('all-types-modal');
-            const grid = document.getElementById('all-types-grid');
-            const modalContent = document.getElementById('modal-content');
+        function triggerSparkle() {
+            gsap.to(marker.scale, { x: 6, y: 6, z: 6, duration: 0.3, yoyo: true, repeat: 3, ease: "back.out(2)", onComplete: () => { marker.scale.set(1.5, 1.5, 1); } });
+        }
+
+        function openLoginModal() { 
+            // 로그인 시 입력값 초기화
+            document.getElementById('loginName').value = '';
+            document.getElementById('loginPhone').value = '';
+            document.getElementById('modal-backdrop').classList.remove('hidden'); 
+            document.getElementById('login-modal').classList.remove('hidden'); 
+            document.getElementById('target-modal').classList.add('hidden'); 
+            document.getElementById('record-modal').classList.add('hidden'); 
+        } 
+
+        function processLogin() { 
+            const name = document.getElementById('loginName').value.trim(); 
+            const phone = document.getElementById('loginPhone').value.trim(); 
+            if(!name || phone.length < 4) return alert("정보를 정확히 입력해주세요."); 
             
-            if (modal.classList.contains('hidden')) {
-                // 그리드 내용이 비어있으면 1회 렌더링
-                if (grid.innerHTML.trim() === "") {
-                    Object.entries(results).forEach(([code, data]) => {
-                        const card = document.createElement('div');
-                        card.className = "bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-300 hover:-translate-y-1 transition-all cursor-default flex flex-col h-full";
-                        card.innerHTML = `
-                            <div class="text-indigo-500 font-black text-sm mb-1 tracking-widest uppercase">${code}</div>
-                            <div class="font-bold text-gray-900 text-lg mb-2 leading-tight">${data.title}</div>
-                            <div class="text-gray-600 text-[13px] leading-relaxed break-keep flex-grow">${data.summary}</div>
-                        `;
-                        grid.appendChild(card);
-                    });
+            // 이전 데이터 초기화 후 새로운 ID 할당
+            currentUserId = phone; 
+            currentUserName = name;
+            
+            window.subscribeUser(phone);
+            document.getElementById('login-modal').classList.add('hidden'); 
+            
+            // 데이터 매칭을 위한 지연 시간
+            setTimeout(() => {
+                const user = window.appData.users[currentUserId];
+                if (user) {
+                    document.getElementById('modal-user-title').innerText = user.name + "님"; 
+                    document.getElementById('record-modal').classList.remove('hidden'); 
+                } else {
+                    document.getElementById('target-modal').classList.remove('hidden'); 
                 }
-                // 모달 열기 (애니메이션 적용)
-                modal.classList.remove('hidden');
-                // 약간의 딜레이를 주어 transition이 작동하도록 함
-                setTimeout(() => {
-                    modal.classList.remove('opacity-0');
-                    modalContent.classList.remove('scale-95');
-                }, 10);
-            } else {
-                // 모달 닫기 (애니메이션 적용)
-                modal.classList.add('opacity-0');
-                modalContent.classList.add('scale-95');
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 300); // transition duration과 동일하게 맞춤
-            }
-        }
+                window.updateVisuals(true);
+            }, 800);
+        } 
 
-        // ESC 키 입력 시 모달 닫기 지원
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('all-types-modal');
-                if (!modal.classList.contains('hidden')) {
-                    toggleAllTypes();
-                }
-            }
-        });
+        async function processTargetSetting() { 
+            const target = parseFloat(document.getElementById('targetInput').value); 
+            if (!target || target <= 0) return alert("목표 거리를 입력해주세요."); 
+            await window.firebaseSetTarget(currentUserId, currentUserName, target);
+            document.getElementById('target-modal').classList.add('hidden'); 
+            showRecordModal(); 
+        } 
 
-        // 질문 데이터
-        const rawQuestions = [
-            { q: "모임에 어색한 정적이 흐를 때,", a: "내가 먼저 아무 말이나 던져 침묵을 깬다.", b: "누군가 말할 때까지 속으로 기다린다.", left: 'F', right: 'B' },
-            { q: "지인과 함께 식사를 하러갈 때,", a: "먼저 물컵과 수저를 세팅한다.", b: "조심히 상황을 지켜보며 기다린다.", left: 'F', right: 'B' },
-            { q: "팀 프로젝트를 진행할 때,", a: "마이크를 잡고 스피치 하는 발표자", b: "타이밍 맞춰 PPT를 넘겨주는 오퍼레이터", left: 'F', right: 'B' },
-            { q: "사역의 자리나 아웃리치에서,", a: "기획을 하는 것이 마음이 편하다.", b: "기획된 대로 움직이는 것이 편하다.", left: 'F', right: 'B' },
-            { q: "전자기기나 유행에 대해서,", a: "늘 새로운 것을 시도하는 얼리어답터", b: "늘 익숙한 것을 추구하는 안정형", left: 'F', right: 'B' },
-            { q: "식당에서 메뉴를 고를 때,", a: "안 먹어본 오늘의 특선! 낯선 맛에 도전한다.", b: "늘 먹던 실패 없는 그 맛! 단골 메뉴를 시킨다.", left: 'W', right: 'L' },
-            { q: "서점에 가서 베스트셀러 코너를 볼 때,", a: "지구 반대편의 역사나 거시적인 세계 정세에 관한 책에 손이 간다.", b: "지금 내 삶에 바로 적용할 수 있는 실용서에 손이 간다.", left: 'W', right: 'L' },
-            { q: "나에게 진짜 '쉼'이 필요할 때,", a: "비행기를 타고 한 번도 안 가본 곳으로 떠난다.", b: "가장 익숙한 내 방 침대에서 좋아하는 OTT를 본다.", left: 'W', right: 'L' },
-            { q: "나에게 조금 더 와닿고 눈물이 나는 기도는,", a: "이름 모를 미전도 종족과 선교사님을 향한 기도", b: "나의 가족과 직장 동료, 내 옆자리 지체를 위한 기도", left: 'W', right: 'L' },
-            { q: "나의 유튜브 알고리즘에는,", a: "해외여행 브이로그, 걸어서 세계속으로 등", b: "국내 핫플 리뷰, 일상 브이로그, 자기계발 등", left: 'W', right: 'L' },
-            { q: "함께 일하던 팀원이 큰 실수를 했을 때,", a: "괜찮아? 많이 당황했지? 마음부터 챙긴다.", b: "어떻게 수습할지 플랜부터 짜자. 해결책부터 챙긴다.", left: 'R', right: 'T' },
-            { q: "모임에 지각해서 문을 열고 들어갈 때,", a: "다들 정말 미안해! 많이 기다렸지?", b: "지금 모임 어디까지 진행됐어?", left: 'R', right: 'T' },
-            { q: "함께 일할 파트너를 고를 때,", a: "성격이 원만하고 나랑 가치관이나 소통 방식이 잘 맞는 사람.", b: "일 처리 능력이 확실하고 내가 신경 안 써도 자기 몫을 다하는 사람.", left: 'R', right: 'T' },
-            { q: "누군가에게 문제가 생겼을 때,", a: "조용히 옆에 앉아 끄덕이며 끝까지 이야기를 들어준다.", b: "그 사람의 문제를 실질적으로 해결할 방법을 찾아준다.", left: 'R', right: 'T' },
-            { q: "누군가에게 줄 선물을 준비할 때,", a: "이 선물을 받고 감동할 지인의 표정과 추억을 떠올린다.", b: "지인에게 지금 가장 필요하고 실질적인 도움이 될 물건을 찾는다.", left: 'R', right: 'T' },
-            { q: "공동체 수련회나 아웃리치 짐을 쌀 때,", a: "혹시 모르니까 며칠 전부터 완벽하게 다 세팅해 둔다.", b: "가서 사면 되지 출발 전날 눈에 보이는 대로 챙긴다.", left: 'S', right: 'A' },
-            { q: "가기로 한 식당이 하필 오늘 휴무일일 때,", a: "왜 미리 검색을 안 했을까 스스로 극심한 스트레스를 받는다.", b: "오, 근처 다른 맛집을 찾을 기회네! 오히려 설렌다.", left: 'S', right: 'A' },
-            { q: "어떤 목적지를 찾아 갈 때,", a: "도착 예정 시간과 최적의 경로를 철저히 따른다.", b: "가끔은 내비게이션을 끄고 발길 닿는 낯선 골목을 걸어본다.", left: 'S', right: 'A' },
-            { q: "내 스마트폰 캘린더의 상태는,", a: "시간 단위로 할 일과 미팅이 빼곡하게 적혀 있다.", b: "굵직한 약속만 적혀 있고 비어있는 여백이 훨씬 많다.", left: 'S', right: 'A' },
-            { q: "마감일이 정해진 사역이나 업무를 할 때,", a: "미리미리 여유 있게 끝내놔야 마음 편히 발 뻗고 잔다.", b: "마감 직전 폭발하는 아드레날린의 엄청난 효율을 믿는다.", left: 'S', right: 'A' }
-        ];
+        function showRecordModal() { 
+            const user = window.appData.users[currentUserId];
+            document.getElementById('modal-user-title').innerText = (user ? user.name : currentUserName) + "님"; 
+            document.getElementById('record-modal').classList.remove('hidden'); 
+            window.updateVisuals(); 
+        } 
 
-        // 지표 설명
-        const allIndicators = [
-            { id: 'F', group: '사역의 위치', sub: '', label: 'F 전방현장형', desc: '현장 최전방에서 직접 소통하고 개척하는 스타일' },
-            { id: 'B', group: '사역의 위치', sub: '', label: 'B 후방지원형', desc: '보이지 않는 곳에서 행정과 기도로 든든히 받쳐주는 스타일' },
-            { id: 'W', group: '사역의 무대', sub: '', label: 'W 타문화열방형', desc: '낯선 문화권과 먼 나라 영혼들에 대한 뜨거운 마음' },
-            { id: 'L', group: '사역의 무대', sub: '', label: 'L 인근일상형', desc: '내 삶의 터전과 가까운 이웃을 돌보는 생활 밀착형' },
-            { id: 'R', group: '접근 방식', sub: '', label: 'R 관계중심형', desc: '사람의 마음과 감정, 나눔을 사역의 최우선으로 선호' },
-            { id: 'T', group: '접근 방식', sub: '', label: 'T 과업중심형', desc: '명확한 목표 달성과 효율적인 업무 처리를 중요시함' },
-            { id: 'S', group: '상황 대처', sub: '', label: 'S 계획중심형', desc: '철저한 준비와 체계적인 일정을 통해 안정적으로 사역' },
-            { id: 'A', group: '상황 대처', sub: '', label: 'A 유연대응형', desc: '변화하는 상황에 순발력 있게 대처하며 자유롭게 사역' }
-        ];
+        async function processSubmitRecord() { 
+            const val = parseFloat(document.getElementById('inputKm').value); 
+            if(!val || val <= 0) return alert("거리를 입력해주세요."); 
+            if(val > 50) return alert("한 번에 최대 50km까지 입력 가능합니다.");
+            
+            await window.firebaseAddRecord(currentUserId, val);
+            triggerSparkle();
+            
+            // 자동 로그아웃 및 폼 초기화
+            currentUserId = null;
+            currentUserName = "";
+            saveAndClose();
+        } 
 
-        // 16가지 결과 데이터
-        const results = {
-            "FWRS": { title: "준비된 글로벌 프론티어", summary: "선교지 최전방에서 현지인과 깊게 교제하며, 철저하게 계획된 일정대로 전도하는 빈틈없는 개척자.", desc: "언어와 문화를 미리 꼼꼼히 공부해가서 현지인들에게 깊은 감동을 줍니다. 당신의 철저한 준비 덕분에 팀원들은 안전함을 느끼고, 현지인들은 존중받는 느낌을 받습니다.", img: 1, best: "BWTS (파워 스케줄 네비게이터)", bestReason: "당신이 앞에서 거침없이 복음을 전할 때, 뒤에서 항공권과 재정을 오차 없이 세팅해 주는 최고의 파트너입니다.", sub: "FWTA (위기탈출 특공대)", subReason: "당신의 완벽한 계획이 현지 사정으로 틀어졌을 때, 텐션을 잃지 않고 순발력 있게 위기를 모면해 줍니다." },
-            "FWRA": { title: "성령충만 글로벌 인싸", summary: "낯선 타문화권에서도 바디랭귀지로 현지인과 5분 만에 베프가 되는 자유로운 영혼의 소유자.", desc: "계획에 없던 만남에서도 하나님이 예비하신 영혼을 기가 막히게 찾아냅니다. 당신의 환한 미소와 친화력은 닫혀 있던 선교지의 문을 가장 먼저 여는 강력한 열쇠입니다.", img: 2, best: "BWRS (선교지 마더 테레사)", bestReason: "당신이 길거리에서 엄청난 친화력으로 영혼들을 데려오면, 뒤에서 따뜻한 밥과 약을 챙겨주며 정착시킵니다.", sub: "BWTS (파워 스케줄 네비게이터)", subReason: "즉흥적이고 자유로운 당신이 사역의 큰 틀을 벗어나지 않도록 든든한 나침반이 되어 줍니다." },
-            "FWTS": { title: "열방의 홀리 버스커", summary: "등 뒤에 기타 하나 둘러메고 당당하게 앞장서며, 완벽하게 기획된 공연이나 사역으로 선교지 무대를 장악하는 달란트 부자.", desc: "공연이나 사역 프로그램을 큐시트대로 완벽하게 진행하여 흐트러짐 없는 복음의 메시지를 전달합니다. 당신의 탁월한 준비성은 선교지의 영적 수준을 한 단계 끌어올립니다.", img: 3, best: "BWTA (선교지 만능 맥가이버)", bestReason: "당신이 완벽한 무대(찬양/사역)를 이끌 때, 앰프가 고장 나거나 짐을 옮겨야 하는 궂은일을 뒤에서 척척 해결해 줍니다.", sub: "BWRS (선교지 마더 테레사)", subReason: "프로그램(T)에 집중하느라 자칫 놓치기 쉬운 팀원들의 감정과 체력(R)을 뒤에서 섬세하게 케어해 줍니다." },
-            "FWTA": { title: "위기탈출 타문화 특공대", summary: "선교지에서 음향이 꺼지거나 돌발 상황이 생겨도, 특유의 순발력과 끼로 분위기를 확 띄우는 무대 위 해결사.", desc: "예상치 못한 비가 오거나 정전이 되어도 당황하지 않고, 오히려 그 상황을 유쾌한 레크리에이션으로 바꿔버립니다. 하나님은 당신의 넘치는 끼를 통해 슬픔에 잠긴 땅을 웃게 만드십니다.", img: 4, best: "BWRA (국경 초월 힐러)", bestReason: "당신이 무대 위에서 에너지를 폭발시키며 시선을 사로잡을 때, 무대 밑에서 아이들을 조용히 안아주며 투트랙 사역을 완성합니다.", sub: "FWRS (준비된 글로벌 프론티어)", subReason: "순발력은 좋으나 자칫 방향을 잃을 수 있는 당신에게, 명확한 목표와 꼼꼼한 사역 기획을 제공합니다." },
-            "FLRS": { title: "일상의 전략적 멘토", summary: "학교나 직장에서 믿지 않는 영혼을 마음에 품고, 치밀하게 타이밍을 재어 밥을 사주며 복음을 전하는 관계 전도의 달인.", desc: "친구의 생일이나 힘든 시기를 캘린더에 체크해두고 세심하게 챙기며 감동을 줍니다. '언제 밥 한번 먹자'는 빈말 대신, 정확한 날짜를 잡고 삶을 나누며 그를 주님께로 인도합니다.", img: 5, best: "BLTS (디테일 깎는 장인)", bestReason: "당신이 새가족과 깊은 나눔을 기획할 때, 그 모임에 필요한 예쁜 웰컴 키트나 공간 세팅을 완벽하게 준비해 줍니다.", sub: "FLTA (순발력 만렙 사역자)", subReason: "1:1 진지한 만남에 익숙한 당신에게, 다 같이 웃고 떠드는 레크리에이션 같은 동적인 에너지를 불어넣어 줍니다." },
-            "FLRA": { title: "동네방네 빛과 소금", summary: "우리 교회 공동체나 일상 속에서 누구와도 스스럼없이 어울리며, 삶의 자연스러운 모습으로 그리스도의 향기를 뿜어내는 인싸.", desc: "길 가다 마주친 친구와 떡볶이집에 들어가 자연스럽게 고민을 들어주고 기도해주는 멋진 친구입니다. 당신의 꾸밈없는 일상은 주변 사람들에게 \"나도 너를 보니 교회 가고 싶다\"는 마음을 심어줍니다.", img: 6, best: "BLRA (공동체 인간 핫팩)", bestReason: "당신이 외부에서 새로운 사람을 교회로 데려오면, 공동체 안에서 그 사람이 뻘쭘하지 않도록 따뜻하게 녹여줍니다.", sub: "FLTS (공동체 하드캐리 리더)", subReason: "사람 만나는 걸 좋아하는 당신을 체계적인 제자 훈련이나 사역의 자리로 이끌어주는 훌륭한 견인차입니다." },
-            "FLTS": { title: "공동체 하드캐리 리더", summary: "새해 성경통독 프로그램이나 청년부 수련회 등 중요한 사역을 철저하게 기획하고 맨 앞에서 끌고 가는 열정 리더.", desc: "모임의 목표와 방향성을 잃지 않도록 꽉 잡고 가며, 흐지부지될 수 있는 프로젝트를 기어이 성공시킵니다. 리더인 당신이 있으면 공동체는 든든한 추진력을 얻습니다.", img: 7, best: "BLRS (비밀 중보기도 요원)", bestReason: "당신이 앞장서서 힘든 프로젝트(수련회, 성경통독 등)를 밀어붙일 때, 영적으로 지치지 않도록 가장 강력한 기도의 방패가 되어 줍니다.", sub: "BLRA (공동체 인간 핫팩)", subReason: "목표 달성(T)을 위해 달리다 보면 팀원들이 지칠 수 있는데, 이때 팀원들의 마음(R)을 다독여 이탈자를 막아줍니다." },
-            "FLTA": { title: "순발력 만렙 사역자", summary: "교회에서 갑작스럽게 간증이나 특송, 레크리에이션 진행을 부탁받아도 당황하지 않고 은혜롭게 해내는 만능 엔터테이너.", desc: "갑자기 마이크가 넘어와도 빼지 않고 분위기를 은혜롭게 주도하며, 어색한 모임에 활력을 불어넣습니다. 어떤 상황에서도 즐거움을 찾아내는 당신은 공동체의 비타민 같은 존재입니다.", img: 8, best: "BLTA (교회의 숨은 천사)", bestReason: "당신이 갑작스럽게 행사를 진행하며 판을 벌일 때, 뒤에서 남는 쓰레기를 치우고 빈자리를 세팅하며 묵묵히 지원합니다.", sub: "BLRS (비밀 중보기도 요원)", subReason: "통통 튀고 눈에 띄는 사역을 하는 당신이 교만해지거나 영적 공격을 받지 않도록 묵직하게 기도로 덮어줍니다." },
-            "BWRS": { title: "선교지 마더 테레사", summary: "눈에 띄지 않는 곳에서 현지인들의 필요와 아픔을 꼼꼼하게 살피고 품어주는 따뜻한 심장.", desc: "팀원들의 건강 상태와 현지인들의 필요를 미리 파악하고, 상비약과 간식을 챙겨 다니는 섬세함이 있습니다. 당신의 따뜻한 배려 덕분에 지친 영혼들이 다시 일어설 힘을 얻습니다.", img: 9, best: "FWRA (성령충만 글로벌 인싸)", bestReason: "당신이 정성껏 준비한 음식과 돌봄의 자리로, 현지 영혼들을 거침없이 데려와 주는 최고의 영업 사원(?)입니다.", sub: "FWTS (열방의 홀리 버스커)", subReason: "조용히 뒤에서 섬기는 당신을 대신해, 사역의 전면에서 복음의 메시지를 강력하고 선명하게 선포해 줍니다." },
-            "BWRA": { title: "국경 초월 힐러", summary: "프로그램 중심의 사역보다는, 현지 아이들을 그저 묵묵히 안아주고 상황에 맞춰 돌봐주는 데서 큰 기쁨을 느끼는 사람.", desc: "말이 통하지 않아도 눈빛과 스킨십으로 현지 아이들의 상처 입은 마음을 어루만집니다. 거창한 사역보다 한 사람의 손을 잡아주는 당신의 모습 자체가 살아있는 설교입니다.", img: 10, best: "FWTA (위기탈출 특공대)", bestReason: "당신이 현지 아이들과 조용히 교감하는 동안, 전체적인 분위기를 빵빵 터뜨리며 즐거운 사역 현장을 만들어 줍니다.", sub: "BWTS (파워 스케줄 네비게이터)", subReason: "유연하게 사람을 섬기느라 시간 가는 줄 모르는 당신에게 이동 시간과 예산을 정확히 알려주는 가이드입니다." },
-            "BWTS": { title: "파워 스케쥴 선교 네비게이터", summary: "항공권, 재정 관리, 사역 타임테이블 등 선교의 뼈대를 오차 없이 완벽하게 세워 팀을 이끄는 보이지 않는 브레인.", desc: "이동 동선, 숙소 예약, 식사 예산까지 엑셀로 정리하여 사역이 물 흐르듯 진행되게 만듭니다. 당신의 보이지 않는 수고 덕분에 팀원들은 오직 사역과 예배에만 집중할 수 있습니다.", img: 11, best: "FWRS (준비된 글로벌 프론티어)", bestReason: "당신이 짠 완벽한 타임테이블과 예산안을 가장 잘 이해하고, 그 판 위에서 최고의 효율로 사역을 펼치는 리더입니다.", sub: "BWRA (국경 초월 힐러)", subReason: "행정과 일정(T)에 치여 스트레스받을 때, 따뜻한 위로 한마디와 간식(R)을 건네주는 힐링 파트너입니다." },
-            "BWTA": { title: "선교지 만능 맥가이버", summary: "무더운 날 짐을 나르거나 식사를 챙기는 등, 선교 현장에서 발생하는 온갖 돌발적인 궂은일을 말없이 척척 해결하는 기둥.", desc: "갑작스러운 짐 이동이나 설거지거리 등 남들이 꺼리는 일을 불평 없이 묵묵히 처리합니다. 화려한 조명은 없지만, 하나님은 땀 흘리는 당신의 등을 가장 아름답게 보십니다.", img: 12, best: "FWTS (열방의 홀리 버스커)", bestReason: "당신이 세팅한 음향 장비와 고쳐놓은 소품들을 활용해 무대 위에서 최고의 퍼포먼스를 내며 보람을 느끼게 해줍니다.", sub: "FWRS (준비된 글로벌 프론티어)", subReason: "눈앞의 고장 난 것을 즉각 고치는 데 특화된 당신에게, 선교의 큰 그림과 장기적인 비전을 제시해 줍니다." },
-            "BLRS": { title: "비밀 중보기도 요원", summary: "기도 노트에 지체들의 이름을 빼곡히 적어두고, 치밀하고 구체적으로 영적 전쟁의 최후방을 지키는 기도의 용사.", desc: "매일 정해진 시간에 공동체와 나라를 위해 무릎 꿇으며, 한번 들은 기도 제목은 절대 잊지 않고 끝까지 책임집니다. 당신은 우리 공동체를 영적으로 지탱하는 가장 강력한 기둥입니다.", img: 13, best: "FLTS (공동체 하드캐리 리더)", bestReason: "당신의 강력한 기도의 후원을 받아, 실제 공동체 안에서 눈에 보이는 굵직한 사역들을 돌파해 내는 행동 대장입니다.", sub: "FLTA (순발력 만렙 사역자)", subReason: "조용히 골방을 지키는 당신에게, 가끔은 활동적이고 유쾌한 교제의 자리로 이끌어 활기를 불어넣어 줍니다." },
-            "BLRA": { title: "공동체 인간 핫팩", summary: "공동체 모임에서 어색해하거나 소외된 새가족 곁에 유연하게 다가가, 조용히 말을 건네며 마음을 녹여주는 따뜻한 난로.", desc: "혼자 있는 지체에게 슥 다가가 부담스럽지 않게 말을 걸고, 그들의 이야기를 경청해 줍니다. 당신 곁에 있으면 누구나 '내가 여기 소속되어 있구나' 하는 안정감을 느꼈니다.", img: 14, best: "FLRA (동네방네 빛과 소금)", bestReason: "길 잃은 양들을 교회로 계속 데려오면, 당신의 따뜻함으로 그들이 공동체에 뿌리내리게 하는 환상의 릴레이 전도 조합입니다.", sub: "BLTS (디테일 깎는 장인)", subReason: "사람을 챙기느라 놓치기 쉬운 행정적인 부분(회비 걷기, 출석부 정리 등)을 옆에서 깔끔하게 마무리해 줍니다." },
-            "BLTS": { title: "디테일 깎는 장인", summary: "청년부 행사 때 PPT, 영상, 회계 등 가장 손이 많이 가고 티 안 나는 사역을 완벽하게 준비하는 보이지 않는 손.", desc: "예배 PPT, 주보 디자인, 회계 정산 등 꼼꼼함이 필요한 영역에서 빈틈없는 실력을 발휘합니다. 티 내지 않고 묵묵히 완성도를 높이는 당신의 섬김이 예배의 품격을 만듭니다.", img: 15, best: "FLRS (일상의 전략적 멘토)", bestReason: "당신이 기획하고 깎아낸 정교한 예배 세팅이나 소그룹 자료를 가지고, 영혼들을 먹이고 양육하는 데 알차게 사용해 줍니다.", sub: "BLRA (공동체 인간 핫팩)", subReason: "화면 속 픽셀이나 엑셀 수식(T)에 갇혀 있을 때, \"수고가 많다\"며 커피 한 잔(R)을 건네주는 힐링 파트너입니다." },
-            "BLTA": { title: "교회의 숨은 천사", summary: "일손이 부족하거나 펑크 난 자리가 생기면 제일 먼저 달려와 그 자리를 기꺼이 메워주는, 묵묵하지만 가장 든든한 동역자.", desc: "행사 당일 일손이 부족한 곳이 보이면 누가 시키지 않아도 조용히 가서 그 구멍을 메웁니다. 이름 없이 빛도 없이 섬기는 당신이야말로 하나님 나라의 진정한 영웅입니다.", img: 16, best: "FLTA (순발력 만렙 사역자)", bestReason: "당신이 빈자리를 메우고 상황을 정리해 주는 덕분에, 돌발 상황에서도 자유롭게 끼를 발휘하며 판을 깔 수 있는 콤비입니다.", sub: "FLTS (공동체 하드캐리 리더)", subReason: "묵묵히 시키는 일을 잘 해내는 당신에게, \"이번엔 이 방향으로 가자!\"며 명확한 목표와 동기를 부여해 줍니다." }
+        function saveAndClose() { 
+            closeModals(); 
+            window.updateVisuals(); 
+            document.getElementById('inputKm').value = ''; 
+            document.getElementById('targetInput').value = '';
+        } 
+
+        function closeModals() { document.getElementById('modal-backdrop').classList.add('hidden'); } 
+
+        function animate() { 
+            requestAnimationFrame(animate); 
+            if(globe) globe.rotation.y -= 0.0005; 
+            if(controls) controls.update(); 
+            if(renderer) renderer.render(scene, camera); 
+        } 
+
+        window.addEventListener('resize', () => { 
+            camera.aspect = window.innerWidth / window.innerHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(window.innerWidth, window.innerHeight); 
+        }); 
+
+        init3D(); 
+    </script> 
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCT1SfWun7ZfOP3JVssXzGEiR-v7ZGPv18",
+            authDomain: "onnurinoah.firebaseapp.com",
+            databaseURL: "https://onnurinoah-default-rtdb.firebaseio.com",
+            projectId: "onnurinoah",
+            storageBucket: "onnurinoah.firebasestorage.app",
+            messagingSenderId: "462674776835",
+            appId: "1:462674776835:web:28a8dd67b798906f248f36",
+            measurementId: "G-FXW46XEVQP"
         };
 
-        let currentIndex = 0;
-        let scores = { F: 0, B: 0, W: 0, L: 0, R: 0, T: 0, S: 0, A: 0 };
-        let history = [];
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        function startTest() {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('question-screen').classList.remove('hidden');
-            showQuestion();
-        }
+        onValue(ref(db, "state"), snap => {
+            const data = snap.val();
+            if(!data) return;
+            window.appData.totalKm = data.totalKm || 0;
+            window.appData.totalGoal = data.totalGoal || 0;
+            window.updateVisuals?.();
+        });
 
-        function showQuestion() {
-            const q = rawQuestions[currentIndex];
-            const container = document.getElementById('question-container');
-            container.classList.remove('fade-in'); void container.offsetWidth; container.classList.add('fade-in');
-            document.getElementById('scenario-text').innerText = q.q;
-            document.getElementById('option-a-text').innerText = q.a;
-            document.getElementById('option-b-text').innerText = q.b;
-            document.getElementById('progress-text').innerText = `${currentIndex + 1} / 20`;
-            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / 20) * 100}%`;
-            document.getElementById('prev-btn').style.visibility = currentIndex === 0 ? 'hidden' : 'visible';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function handleAnswer(pts, side) {
-            const q = rawQuestions[currentIndex];
-            const type = side === 'left' ? q.left : q.right;
-            scores[type] += pts;
-            history.push({ type, pts });
-            if (currentIndex < 19) {
-                currentIndex++;
-                setTimeout(showQuestion, 150);
-            } else {
-                document.getElementById('question-screen').classList.add('hidden');
-                document.getElementById('loading-screen').classList.remove('hidden');
-            }
-        }
-
-        function goBack() {
-            if (currentIndex > 0) {
-                const last = history.pop();
-                scores[last.type] -= last.pts;
-                currentIndex--;
-                showQuestion();
-            }
-        }
-
-        function showResult() {
-            const mbti = (scores.F >= scores.B ? "F" : "B") + (scores.W >= scores.L ? "W" : "L") + (scores.R >= scores.T ? "R" : "T") + (scores.S >= scores.A ? "S" : "A");
-            const res = results[mbti];
-            
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
-            
-            // 이미지 번호 매핑 (결과 객체의 img 프로퍼티 사용)
-            document.getElementById('result-img').src = `./${res.img}.PNG`;
-            document.getElementById('result-code').innerText = mbti;
-            document.getElementById('result-title').innerText = res.title;
-            document.getElementById('result-summary').innerText = res.summary;
-            document.getElementById('result-desc').innerText = res.desc;
-
-            // 키워드 배지
-            const keywordDiv = document.getElementById('result-keywords');
-            keywordDiv.innerHTML = '';
-            mbti.split('').forEach(char => {
-                const info = allIndicators.find(i => i.id === char);
-                const span = document.createElement('span');
-                span.className = "text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 shadow-sm";
-                span.innerText = info.label;
-                keywordDiv.appendChild(span);
+        window.subscribeUser = function(phone) {
+            onValue(ref(db, "users/" + phone), snap => {
+                const data = snap.val();
+                if(!data) return;
+                window.appData.users[phone] = data;
+                window.updateVisuals?.();
             });
+        };
 
-            // 상세 지표 설명 구성
-            const catDiv = document.getElementById('category-details');
-            catDiv.innerHTML = '';
-            const groups = ["사역의 위치", "사역의 무대", "접근 방식", "상황 대처"];
-            groups.forEach((groupName, gIdx) => {
-                const groupContainer = document.createElement('div');
-                groupContainer.className = "space-y-2";
-                
-                const groupTitle = document.createElement('p');
-                groupTitle.className = "text-[11px] font-black text-gray-400 uppercase tracking-widest pl-1 mb-2";
-                groupTitle.innerHTML = `${gIdx+1}. ${groupName}`;
-                groupContainer.appendChild(groupTitle);
+        window.firebaseSetTarget = async function(phone, name, target) {
+            await update(ref(db, "users/" + phone), { name: name, target: target, dist: 0 });
+            await runTransaction(ref(db, "state/totalGoal"), cur => { return (cur || 0) + target; });
+        };
 
-                const groupIndicators = allIndicators.filter(i => i.group === groupName);
-                groupIndicators.forEach(info => {
-                    const isSelected = mbti.includes(info.id);
-                    const item = document.createElement('div');
-                    item.className = `flex items-start gap-3 p-3 rounded-2xl border transition-all ${isSelected ? 'bg-indigo-600 border-indigo-600 shadow-md' : 'bg-white border-gray-100'}`;
-                    
-                    item.innerHTML = `
-                        <div class="mt-1 flex-shrink-0">
-                            ${isSelected ? 
-                                '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>' : 
-                                '<div class="w-4 h-4 rounded-full border-2 border-gray-200"></div>'}
-                        </div>
-                        <div>
-                            <p class="text-[14px] font-bold ${isSelected ? 'text-white' : 'text-gray-800'}">${info.label}</p>
-                            <p class="text-[12px] ${isSelected ? 'text-indigo-100' : 'text-gray-500'} mt-0.5">${info.desc}</p>
-                        </div>
-                    `;
-                    groupContainer.appendChild(item);
-                });
-                catDiv.appendChild(groupContainer);
-            });
-
-            // 동역자 정보 구성
-            const compDiv = document.getElementById('companion-list');
-            compDiv.innerHTML = `
-                <div class="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100 relative shadow-sm hover:shadow-md transition-shadow">
-                    <span class="absolute -top-3 left-6 bg-indigo-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Best Combo</span>
-                    <p class="text-indigo-900 font-black text-base mb-2">🥇 ${res.best}</p>
-                    <p class="text-indigo-700 text-[13px] leading-relaxed break-keep">${res.bestReason}</p>
-                </div>
-                <div class="bg-gray-50 p-6 rounded-[2rem] border border-gray-200 relative shadow-sm hover:shadow-md transition-shadow">
-                    <span class="absolute -top-3 left-6 bg-gray-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Sub Partner</span>
-                    <p class="text-gray-900 font-black text-base mb-2">🥈 ${res.sub}</p>
-                    <p class="text-gray-600 text-[13px] leading-relaxed break-keep">${res.subReason}</p>
-                </div>
-            `;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        window.firebaseAddRecord = async function(phone, val) {
+            await runTransaction(ref(db, "users/" + phone + "/dist"), cur => { return (cur || 0) + val; });
+            await runTransaction(ref(db, "state/totalKm"), cur => { return (cur || 0) + val; });
+        };
     </script>
-</body>
+</body> 
 </html>
